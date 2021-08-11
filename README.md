@@ -29,7 +29,7 @@ Returns the last package tracking event for a given package tracking number. Can
 
 ### Usage
 
-Populate the **credentials.json** file in the root of the project with your courier API credentials. **Add credentials.json to .gitignore if you are using git with this project**.
+Populate the **credentials.json** file in the root of the project with your courier API credentials. **Add credentials.json to .gitignore**.
 
 See **test.ts** for example usage (you must input the courierCode and trackingNumber).
 
