@@ -70,5 +70,5 @@ export const track = async (
         throw new Error(
             `Courier with courier code "${courierCode}" does not exist.`
         );
-    return await provider.track(trackingNumber);
+    return provider.track(trackingNumber);
 };
