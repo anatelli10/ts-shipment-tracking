@@ -25,7 +25,7 @@
 
 ## About
 
-Returns the last package tracking event for a given package tracking number. Can be easily modified to return all tracking events and or additional information like location. The structure is heavily inspired by the PHP tracking repo [Shipment Tracking](https://github.com/hautelook/shipment-tracking). Integrates with [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number) for courier info and validation.
+Returns the last package tracking event for a given package tracking number. Can be easily modified to return all tracking events and or additional information like location. The structure is heavily inspired by the PHP tracking repo [Shipment Tracking](https://github.com/hautelook/shipment-tracking). Integrates with [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number) for courier info and validation. TODO: turn into a node module.
 
 ### Usage
 
