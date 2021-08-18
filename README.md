@@ -9,13 +9,9 @@
 <details open="open">
   <summary>Table of Contents</summary>
   <ol>
-    <li>
-      <a href="#about">About</a>
-      <ul>
-        <li><a href="#usage">Usage</a></li>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#built-with">Built With</a></li>
     <li><a href="#acknowledgements">Acknowledgements</a></li>
   </ol>
 </details>
@@ -24,7 +20,7 @@
 
 Returns a unified TrackingInfo object for FedEx, UPS, and USPS tracking APIs. The structure is heavily inspired by the PHP tracking repo [Shipment Tracking](https://github.com/hautelook/shipment-tracking).
 
-### Usage
+## Usage
 
 Input:
 
@@ -73,7 +69,7 @@ Output:
 }
 ```
 
-Statuses
+Statuses:
 
 ```
     'UNAVAILABLE'
@@ -86,12 +82,12 @@ Statuses
     'DELIVERED'
 ```
 
-### Built With
+## Built With
 
 -   [TypeScript](https://www.typescriptlang.org/)
 -   [Node.js](https://nodejs.org/)
 
-#### Acknowledgements
+## Acknowledgements
 
 -   [Shipment Tracking](https://github.com/hautelook/shipment-tracking)
 -   [date-fns](https://date-fns.org/)
