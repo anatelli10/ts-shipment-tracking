@@ -2,7 +2,8 @@
     "name": "ts-shipment-tracking",
     "version": "1.0.0",
     "description": "Unified shipment tracking data from FedEx, UPS, and USPS APIs.",
-    "main": "index.js",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "scripts": {
         "build": "tsc",
         "test": "tsc && node ./dist/test.js"
