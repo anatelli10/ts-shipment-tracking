@@ -32,7 +32,7 @@ $ npm install ts-shipment-tracking
 Input:
 
 ```typescript
-import { trackFedex, trackUps, trackUsps } from '.';
+import { trackFedex, trackUps, trackUsps } from 'ts-shipment-tracking';
 
 (async (): Promise<void> => {
     try {
