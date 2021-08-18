@@ -19,7 +19,7 @@
 
 ## About
 
-Returns a unified TrackingInfo object for FedEx, UPS, and USPS tracking APIs. The structure is heavily inspired by the PHP tracking repo [Shipment Tracking](https://github.com/hautelook/shipment-tracking).
+Returns a unified response from FedEx, UPS, and USPS tracking APIs.
 
 ## Installation
 
