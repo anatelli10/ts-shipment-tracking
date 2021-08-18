@@ -1,73 +1,75 @@
-import { OptionsOfTextResponseBody } from 'got';
-import Provider from './Provider';
-import ResponseType from './ResponseType';
-import PackageInfo from '../package/PackageInfo';
-import PackageStatus from '../package/PackageStatus';
-import codes from './statusCode/uspsStatusCode';
+import * as codes from './codes.json';
+import got from 'got';
+import { parse as xmlToJson } from 'fast-xml-parser';
+import TrackingInfo from '../TrackingInfo';
 
-export default class UspsProvider extends Provider {
-    userId: string;
-
-    constructor(userId: string) {
-        super();
-        this.userId = userId;
-    }
-
-    getUrl(trackingNumber: string) {
-        return `http://production.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=${this.createRequestXml(
-            trackingNumber
-        )}`;
-    }
-
-    getOptions(): OptionsOfTextResponseBody {
-        return {
-            method: 'POST'
-        };
-    }
-
-    getResponseType() {
-        return ResponseType.XML;
-    }
-
-    parse(response: any) {
-        const error = response.TrackResponse?.TrackInfo?.Error;
-        if (error && error.Number === '-2147219283')
-            return new PackageInfo(PackageStatus.LABEL_CREATED);
-
-        if (error || response.Error || !response.TrackResponse.TrackInfo)
-            return new PackageInfo();
-
-        const pkg = response.TrackResponse.TrackInfo;
-
-        const lastEvent = [
-            pkg.TrackSummary,
-            ...([pkg.TrackDetail].flat() ?? [])
-        ][0];
-
-        const eventCode = lastEvent.EventCode;
-        const expectedDeliveryDate = pkg.ExpectedDeliveryDate;
-
-        const status = codes.get(eventCode) ?? PackageStatus.IN_TRANSIT;
-        const label = lastEvent.Event;
-        const deliveryTime =
-            status === PackageStatus.DELIVERED
-                ? new Date(
-                      `${lastEvent.EventDate} ${lastEvent.EventTime}`
-                  ).getTime()
-                : expectedDeliveryDate
-                ? new Date(expectedDeliveryDate).getTime() +
-                  (12 + 9) * 60 * 60 * 1000
-                : undefined; // When no time is provided, set time to 9pm
-
-        return new PackageInfo(status, label, deliveryTime);
-    }
-
-    createRequestXml(trackingNumber: string): string {
-        return `<TrackFieldRequest USERID="${this.userId}">
-            <Revision>1</Revision>
-            <ClientIp>127.0.0.1</ClientIp>
-            <SourceId>1</SourceId>
-            <TrackID ID="${trackingNumber}"/>
-            </TrackFieldRequest>`;
-    }
+interface TrackDetails {
+    Event: string;
+    EventCode: string;
+    EventCity: string;
+    EventState: string;
+    EventCountry: string;
+    EventZIPCode: string;
+    EventDate: string;
+    EventTime: string;
 }
+
+interface Credentials {
+    userId: string;
+}
+
+const createRequestXml = (
+    trackingNumber: string,
+    { userId }: Credentials
+): string =>
+    `<TrackFieldRequest USERID="${userId}">
+    <Revision>1</Revision>
+    <ClientIp>127.0.0.1</ClientIp>
+    <SourceId>1</SourceId>
+    <TrackID ID="${trackingNumber}"/>
+    </TrackFieldRequest>`;
+
+const getTrackingInfo = ({
+    Event,
+    EventCode,
+    EventCity,
+    EventState,
+    EventCountry,
+    EventZIPCode,
+    EventDate,
+    EventTime
+}: TrackDetails) => ({
+    status: codes.usps[EventCode] ?? 'IN_TRANSIT',
+    label: Event,
+    location:
+        [EventCity, EventState, EventCountry, EventZIPCode]
+            .filter(Boolean)
+            .join(' ') || undefined,
+    date: new Date(`${EventDate} ${EventTime}`).getTime()
+});
+
+const parse = (response: any): TrackingInfo => ({
+    events: [
+        response.TrackResponse.TrackInfo.TrackSummary,
+        ...([response.TrackResponse.TrackInfo.TrackDetail].flat() ?? [])
+    ].map(getTrackingInfo),
+    estimatedDelivery: response.TrackResponse.TrackInfo.ExpectedDeliveryDate
+});
+
+const track = async (
+    trackingNumber: string,
+    credentials: Credentials
+): Promise<TrackingInfo> =>
+    got(
+        'http://production.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
+            createRequestXml(trackingNumber, credentials),
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/xml'
+            },
+            body: createRequestXml(trackingNumber, credentials)
+        }
+    ).then(res => parse(xmlToJson(res.body, { parseNodeValue: false })));
+
+export default track;

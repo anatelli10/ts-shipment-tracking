@@ -1,7 +1,7 @@
 {
-    "name": "package-tracking",
+    "name": "ts-shipment-tracking",
     "version": "1.0.0",
-    "description": "Retrieve package tracking data using FedEx, UPS, and USPS APIs.",
+    "description": "Unified shipment tracking data from FedEx, UPS, and USPS APIs.",
     "main": "index.js",
     "scripts": {
         "build": "tsc",
@@ -9,7 +9,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/anatelli10/package-tracking"
+        "url": "https://github.com/anatelli10/ts-shipment-tracking"
     },
     "keywords": [
         "Tracking",

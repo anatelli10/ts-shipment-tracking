@@ -1,12 +1,11 @@
 <p align="center">
-  <h3 align="center">package-tracking</h3>
+  <h3 align="center">ts-shipment-tracking</h3>
 
   <p align="center">
-    Retrieves package tracking data using FedEx, UPS, and USPS APIs.
+    Unified shipment tracking data from FedEx, UPS, and USPS APIs.
   </p>
 </p>
 
-<!-- TABLE OF CONTENTS -->
 <details open="open">
   <summary>Table of Contents</summary>
   <ol>
@@ -21,49 +20,70 @@
   </ol>
 </details>
 
-<!-- ABOUT THE PROJECT -->
-
 ## About
 
-Returns the last package tracking event for a given package tracking number. Can be easily modified to return all tracking events and or additional information like location. The structure is heavily inspired by the PHP tracking repo [Shipment Tracking](https://github.com/hautelook/shipment-tracking). Integrates with [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number) for courier info and validation. I'll turn this into an actual node module sometime soon™.
+Returns a unified TrackingInfo object for FedEx, UPS, and USPS tracking APIs. The structure is heavily inspired by the PHP tracking repo [Shipment Tracking](https://github.com/hautelook/shipment-tracking).
 
 ### Usage
 
-Populate the **credentials.json** file in the root of the project with your courier API credentials. **Add credentials.json to .gitignore**.
-
-See **test.ts** for example usage (you must input the courierCode and trackingNumber).
-
 Input:
+
 ```typescript
-import { track } from './index';
+import { trackFedex, trackUps, trackUsps } from '.';
 
 (async (): Promise<void> => {
-    const info = await track('usps', '<usps tracking number here>');
-    console.log(info);
+    try {
+        const fedex = await trackFedex('<fedex-tracking-number>', {
+            key: '<fedex-key>',
+            password: '<fedex-password>',
+            accountNumber: '<fedex-account-number>',
+            meterNumber: '<fedex-meter-number>'
+        });
+        console.log(fedex);
+
+        const ups = await trackUps('<ups-tracking-number>', {
+            accessLicenseNumber: '<ups-access-license-number>'
+        });
+        console.log(ups);
+
+        const usps = await trackUsps('<usps-tracking-number>', {
+            userId: '<usps-user-id>'
+        });
+        console.log(usps);
+    } catch (error) {
+        console.log(error);
+    }
 })();
 ```
 
-Output:
+#### Output (\TrackingInfo\):
+
 ```typescript
-PackageInfo {
-  status: 7,
-  label: 'Delivered, In/At Mailbox',
-  deliveryTime: 1626372300000
+{
+  events: [
+    {
+      status: 'IN_TRANSIT',
+      label: 'Arrived at FedEx location',
+      location: 'LEBANON TN US 37090',
+      date: 1616823540000
+    },
+    ...
+  ],
+  estimatedDelivery: 1616996340000
 }
 ```
 
-Status enum:
-```typescript
-enum PackageStatus {
-    UNAVAILABLE,
-    LABEL_CREATED,
-    IN_TRANSIT,
-    OUT_FOR_DELIVERY,
-    DELIVERY_ATTEMPTED,
-    RETURNED_TO_SENDER,
-    EXCEPTION,
-    DELIVERED
-}
+#### Statuses
+
+```
+    'UNAVAILABLE'
+    'LABEL_CREATED'
+    'IN_TRANSIT'
+    'OUT_FOR_DELIVERY'
+    'DELIVERY_ATTEMPTED'
+    'RETURNED_TO_SENDER'
+    'EXCEPTION'
+    'DELIVERED'
 ```
 
 ### Built With
@@ -73,14 +93,9 @@ enum PackageStatus {
 
 <!-- ACKNOWLEDGEMENTS -->
 
-## Acknowledgements
+### Acknowledgements
 
 -   [Shipment Tracking](https://github.com/hautelook/shipment-tracking)
--   [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number)
 -   [date-fns](https://date-fns.org/)
 -   [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser)
 -   [got](https://github.com/sindresorhus/got)
--   [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
