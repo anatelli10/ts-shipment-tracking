@@ -56,7 +56,7 @@ import { trackFedex, trackUps, trackUsps } from '.';
 })();
 ```
 
-Output (\TrackingInfo):
+Output:
 
 ```typescript
 {
@@ -73,7 +73,7 @@ Output (\TrackingInfo):
 }
 ```
 
-#### Statuses
+Statuses
 
 ```
     'UNAVAILABLE'
@@ -91,9 +91,7 @@ Output (\TrackingInfo):
 -   [TypeScript](https://www.typescriptlang.org/)
 -   [Node.js](https://nodejs.org/)
 
-<!-- ACKNOWLEDGEMENTS -->
-
-### Acknowledgements
+#### Acknowledgements
 
 -   [Shipment Tracking](https://github.com/hautelook/shipment-tracking)
 -   [date-fns](https://date-fns.org/)
