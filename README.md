@@ -56,7 +56,7 @@ import { trackFedex, trackUps, trackUsps } from '.';
 })();
 ```
 
-#### Output (\TrackingInfo\):
+Output (\TrackingInfo):
 
 ```typescript
 {
