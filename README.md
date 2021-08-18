@@ -24,7 +24,7 @@ Returns a unified response from FedEx, UPS, and USPS tracking APIs.
 ## Installation
 
 ```sh
-$ npm install delivery-tracker
+$ npm install ts-shipment-tracking
 ```
 
 ## Usage
