@@ -92,6 +92,7 @@ Statuses:
 ## Built With
 
 -   [TypeScript](https://www.typescriptlang.org/)
+-   [Ramda](https://ramdajs.com/)
 -   [Node.js](https://nodejs.org/)
 
 ## Acknowledgements
