@@ -1,8 +1,8 @@
-import * as codes from './codes.json';
+import * as codes from '../util/codes.json';
 import got from 'got';
 import { getTime, parse as dateParser } from 'date-fns';
-import { TrackingEvent, TrackingInfo } from '../types';
-import { ERR_RESPONSE_MISSING_TRACKING_DATA, ERR_TRACKING_NUMBER_NOT_FOUND } from './errors';
+import { TrackingEvent, TrackingInfo } from '../util/types';
+import { ERR_RESPONSE_MISSING_TRACKING_DATA, ERR_TRACKING_NUMBER_NOT_FOUND } from '../util/errors';
 import {
   always,
   apply,

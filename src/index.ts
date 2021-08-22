@@ -1,3 +1,3 @@
-export { default as trackFedex } from './provider/FedexProvider';
-export { default as trackUps } from './provider/UpsProvider';
-export { default as trackUsps } from './provider/UspsProvider';
+export { default as trackFedex } from './couriers/fedex';
+export { default as trackUps } from './couriers/ups';
+export { default as trackUsps } from './couriers/usps';
