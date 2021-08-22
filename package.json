@@ -1,35 +1,38 @@
 {
-    "name": "ts-shipment-tracking",
-    "version": "1.0.1",
-    "description": "Unified shipment tracking data from FedEx, UPS, and USPS APIs.",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "scripts": {
-        "build": "tsc",
-        "test": "tsc && node ./dist/test.js"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/anatelli10/ts-shipment-tracking"
-    },
-    "keywords": [
-        "Tracking",
-        "Fedex",
-        "UPS",
-        "USPS",
-        "TypeScript",
-        "NodeJS"
-    ],
-    "author": "Anthony Natelli",
-    "license": "MIT",
-    "dependencies": {
-        "date-fns": "^2.22.1",
-        "fast-xml-parser": "^3.19.0",
-        "got": "^11.8.2",
-        "ts-tracking-number": "^1.0.12"
-    },
-    "devDependencies": {
-        "source-map-support": "^0.5.19",
-        "typescript": "^3.9.9"
-    }
+  "name": "ts-shipment-tracking",
+  "version": "1.0.1",
+  "description": "Unified shipment tracking data from FedEx, UPS, and USPS APIs.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "rm -rf ./dist && tsc",
+    "test": "npm run build && node ./dist/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anatelli10/ts-shipment-tracking"
+  },
+  "keywords": [
+    "Tracking",
+    "Fedex",
+    "UPS",
+    "USPS",
+    "TypeScript",
+    "NodeJS"
+  ],
+  "author": "Anthony Natelli",
+  "license": "MIT",
+  "dependencies": {
+    "date-fns": "^2.22.1",
+    "fast-xml-parser": "^3.19.0",
+    "got": "^11.8.2",
+    "ramda": "^0.27.1",
+    "typescript": "^4.3.5"
+  },
+  "devDependencies": {
+    "@types/ramda": "^0.27.44",
+    "prettier": "^2.3.2",
+    "source-map-support": "^0.5.19",
+    "ts-node": "^10.2.1"
+  }
 }
