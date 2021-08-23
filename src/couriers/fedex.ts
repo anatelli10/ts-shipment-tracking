@@ -122,7 +122,10 @@ const createRequestXml = (
   </soapenv:Body>
   </soapenv:Envelope>`;
 
-const track = (trackingNumber: string, credentials: Credentials): Promise<TrackingInfo | Error> =>
+export const trackFedex = (
+  trackingNumber: string,
+  credentials: Credentials
+): Promise<TrackingInfo | Error> =>
   got('https://ws.fedex.com:443/web-services', {
     method: 'POST',
     headers: {
@@ -130,5 +133,3 @@ const track = (trackingNumber: string, credentials: Credentials): Promise<Tracki
     },
     body: createRequestXml(trackingNumber, credentials)
   }).then(parse);
-
-export default track;

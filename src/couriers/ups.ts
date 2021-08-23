@@ -113,7 +113,7 @@ const parse: (response: any) => TrackingInfo = pipe<any, any, any, any, Tracking
   ])
 );
 
-const track = (
+export const trackUps = (
   trackingNumber: string,
   { accessLicenseNumber }: Credentials
 ): Promise<TrackingInfo | Error> =>
@@ -123,5 +123,3 @@ const track = (
       Accept: 'application/json'
     }
   }).then(parse);
-
-export default track;

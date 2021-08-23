@@ -100,10 +100,8 @@ const createRequestXml = (trackingNumber: string, userId: string): string =>
   <TrackID ID="${trackingNumber}"/>
   </TrackFieldRequest>`;
 
-const track = (trackingNumber: string, { userId }: Credentials): Promise<TrackingInfo | Error> =>
+export const trackUsps = (trackingNumber: string, { userId }: Credentials): Promise<TrackingInfo | Error> =>
   got(
     'http://production.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
       createRequestXml(trackingNumber, userId)
   ).then(parse);
-
-export default track;
