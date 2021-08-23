@@ -49,7 +49,13 @@ Create a ```credentials.json``` file with the following structure:
 }
 ```
 
-Input:
+Install ts-tracking-number (recommended to use below implementation but not required)
+
+```sh
+$ npm install ts-tracking-number
+```
+
+Example input:
 
 ```typescript
 import * as credentials from './credentials.json';
@@ -82,7 +88,7 @@ const track = (trackingNumber: string): Promise<TrackingInfo | Error> =>
 })();
 ```
 
-Output:
+Example output:
 
 ```typescript
 {
