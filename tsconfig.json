@@ -1,20 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es2018",
-    "module": "commonjs",
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "esModuleInterop": true,
+    "target": "es2016",
+    "module": "commonjs",
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
-    "strictNullChecks": true,
-    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "inlineSourceMap": true,
     "resolveJsonModule": true,
     "suppressImplicitAnyIndexErrors": true,
-    "lib": ["es2019", "dom"]
+    "lib": ["es2019"]
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", ".npm"]
 }
