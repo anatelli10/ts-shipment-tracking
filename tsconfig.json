@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
-    "declaration": true,
-    "declarationMap": true,
     "target": "es2016",
     "module": "commonjs",
+    "declaration": true,
     "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "inlineSourceMap": true,
@@ -12,5 +12,6 @@
     "suppressImplicitAnyIndexErrors": true,
     "lib": ["es2019"]
   },
-  "exclude": ["node_modules", ".npm"]
+  "include": ["src"],
+  "exclude": ["node_modules"]
 }
