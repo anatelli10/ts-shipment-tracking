@@ -49,7 +49,7 @@ Create a ```credentials.json``` file with the following structure:
 }
 ```
 
-Install ts-tracking-number (recommended to use below implementation but not required)
+Install ts-tracking-number (recommended to use below implementation but not required):
 
 ```sh
 $ npm install ts-tracking-number
