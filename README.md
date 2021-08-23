@@ -60,7 +60,7 @@ Example input:
 ```typescript
 import * as credentials from './credentials.json';
 import { TrackingInfo, trackFedex, trackUps, trackUsps } from 'ts-shipment-tracking';
-import { fedex, getTracking, s10, ups, usps } from 'ts-tracking-number';
+import { getTracking, fedex, ups, usps, s10 } from 'ts-tracking-number';
 
 const trackByCourier = (
   courierCode: string,
