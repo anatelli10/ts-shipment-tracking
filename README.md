@@ -98,6 +98,7 @@ Statuses:
 ## Acknowledgements
 
 -   [Shipment Tracking](https://github.com/hautelook/shipment-tracking)
+-   [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number)
 -   [date-fns](https://date-fns.org/)
 -   [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser)
 -   [got](https://github.com/sindresorhus/got)
