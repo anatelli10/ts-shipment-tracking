@@ -29,33 +29,56 @@ $ npm install ts-shipment-tracking
 
 ## Usage
 
+Create a ```credentials.json``` file with the following structure:
+```json
+{
+  "fedex": {
+    "key": "",
+    "password": "",
+    "accountNumber": "",
+    "meterNumber": ""
+  },
+
+  "ups": {
+    "accessLicenseNumber": ""
+  },
+
+  "usps": {
+    "userId": ""
+  }
+}
+```
+
 Input:
 
 ```typescript
-import { trackFedex, trackUps, trackUsps } from 'ts-shipment-tracking';
+import * as credentials from './credentials.json';
+import { TrackingInfo, trackFedex, trackUps, trackUsps } from 'ts-shipment-tracking';
+import { fedex, getTracking, s10, ups, usps } from 'ts-tracking-number';
 
-(async (): Promise<void> => {
-    try {
-        const fedex = await trackFedex('<fedex-tracking-number>', {
-            key: '<fedex-key>',
-            password: '<fedex-password>',
-            accountNumber: '<fedex-account-number>',
-            meterNumber: '<fedex-meter-number>'
-        });
-        console.log(fedex);
+const trackByCourier = (
+  courierCode: string,
+  trackingNumber: string
+): Promise<TrackingInfo | Error> =>
+  courierCode === 'fedex'
+    ? trackFedex(trackingNumber, credentials.fedex)
+    : courierCode === 'ups'
+    ? trackUps(trackingNumber, credentials.ups)
+    : trackUsps(trackingNumber, credentials.usps);
 
-        const ups = await trackUps('<ups-tracking-number>', {
-            accessLicenseNumber: '<ups-access-license-number>'
-        });
-        console.log(ups);
+const track = (trackingNumber: string): Promise<TrackingInfo | Error> =>
+  trackByCourier(
+    getTracking(trackingNumber, [fedex, ups, usps, s10])?.courier.code ?? '',
+    trackingNumber
+  );
 
-        const usps = await trackUsps('<usps-tracking-number>', {
-            userId: '<usps-user-id>'
-        });
-        console.log(usps);
-    } catch (error) {
-        console.log(error);
-    }
+(async () => {
+  try {
+    const trackInfo = await track('<any_tracking_number_here>');
+    console.log('trackInfo:', trackInfo);
+  } catch (error) {
+    console.log(error);
+  }
 })();
 ```
 
