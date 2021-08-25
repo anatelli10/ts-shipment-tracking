@@ -29,63 +29,43 @@ $ npm install ts-shipment-tracking
 
 ## Usage
 
-Create a ```credentials.json``` file with the following structure:
-```json
-{
-  "fedex": {
-    "key": "",
-    "password": "",
-    "accountNumber": "",
-    "meterNumber": ""
-  },
-
-  "ups": {
-    "accessLicenseNumber": ""
-  },
-
-  "usps": {
-    "userId": ""
-  }
-}
-```
-
-Install rjbrooksjr's [ts-tracking-number](https://github.com/rjbrooksjr/ts-tracking-number) (recommended in order to use below implementation, but not required):
+Courier API credentials are stored using dotenv. If you do not have dotenv installed:
 
 ```sh
-$ npm install ts-tracking-number
+$ npm install dotenv
+```
+
+Add the following credentials to your `.env` file:
+
+```
+FEDEX_KEY=
+FEDEX_PASSWORD=
+FEDEX_ACCOUNT_NUMBER=
+FEDEX_METER_NUMBER=
+UPS_ACCESS_LICENSE_NUMBER=
+USPS_USER_ID=
 ```
 
 Example input:
 
 ```typescript
-import * as credentials from './credentials.json';
-import { TrackingInfo, trackFedex, trackUps, trackUsps } from 'ts-shipment-tracking';
-import { getTracking, fedex, ups, usps, s10 } from 'ts-tracking-number';
-
-const trackByCourier = (
-  courierCode: string,
-  trackingNumber: string
-): Promise<TrackingInfo | Error> =>
-  courierCode === 'fedex'
-    ? trackFedex(trackingNumber, credentials.fedex)
-    : courierCode === 'ups'
-    ? trackUps(trackingNumber, credentials.ups)
-    : trackUsps(trackingNumber, credentials.usps);
-
-const track = (trackingNumber: string): Promise<TrackingInfo | Error> =>
-  trackByCourier(
-    getTracking(trackingNumber, [fedex, ups, usps, s10])?.courier.code ?? '',
-    trackingNumber
-  );
+import { track, trackByCourierCode, trackFedex } from 'ts-shipment-tracking';
 
 (async () => {
-  try {
-    const trackInfo = await track('<any_tracking_number_here>');
-    console.log('trackInfo:', trackInfo);
-  } catch (error) {
-    console.log(error);
-  }
+  const exampleOne = await track('<fedex_or_ups_or_usps_tracking_number>');
+  console.log(exampleOne);
+
+  // or
+
+  const exampleTwo = await trackByCourierCode('ups', '<ups_tracking_number>');
+  console.log(exampleTwo);
+
+  // or
+
+  const exampleThree = await trackFedex('<fedex_tracking_number>');
+  console.log(exampleThree);
 })();
+
 ```
 
 Example output:
@@ -120,14 +100,14 @@ Statuses:
 
 ## Built With
 
--   [TypeScript](https://www.typescriptlang.org/)
--   [Ramda](https://ramdajs.com/)
--   [Node.js](https://nodejs.org/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Ramda](https://ramdajs.com/)
+- [Node.js](https://nodejs.org/)
 
 ## Acknowledgements
 
--   [Shipment Tracking](https://github.com/hautelook/shipment-tracking)
--   [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number)
--   [date-fns](https://date-fns.org/)
--   [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser)
--   [got](https://github.com/sindresorhus/got)
+- [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number)
+- [Shipment Tracking](https://github.com/hautelook/shipment-tracking)
+- [date-fns](https://date-fns.org/)
+- [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser)
+- [got](https://github.com/sindresorhus/got)

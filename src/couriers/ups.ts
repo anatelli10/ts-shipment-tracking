@@ -34,10 +34,6 @@ import {
   __
 } from 'ramda';
 
-interface Credentials {
-  accessLicenseNumber: string;
-}
-
 const getDate: (date: string, time: string) => number = pipe<any, Date, number>(
   converge(dateParser, [
     concat,
@@ -113,13 +109,10 @@ const parse: (response: any) => TrackingInfo = pipe<any, any, any, any, Tracking
   ])
 );
 
-export const trackUps = (
-  trackingNumber: string,
-  { accessLicenseNumber }: Credentials
-): Promise<TrackingInfo | Error> =>
+export const trackUps = (trackingNumber: string): Promise<TrackingInfo | Error> =>
   got('https://onlinetools.ups.com/track/v1/details/' + trackingNumber, {
     headers: {
-      AccessLicenseNumber: accessLicenseNumber,
+      AccessLicenseNumber: process.env.UPS_ACCESS_LICENSE_NUMBER,
       Accept: 'application/json'
     }
   }).then(parse);

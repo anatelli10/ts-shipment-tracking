@@ -28,10 +28,6 @@ import {
   __
 } from 'ramda';
 
-interface Credentials {
-  userId: string;
-}
-
 const getDate: (event: any) => number = pipe<any, string[], string[], number>(
   props(['EventDate', 'EventTime']),
   filter(complement(isEmpty)),
@@ -92,16 +88,16 @@ const parse: (response: any) => TrackingInfo = pipe<any, any, any, any, Tracking
   ])
 );
 
-const createRequestXml = (trackingNumber: string, userId: string): string =>
-  `<TrackFieldRequest USERID="${userId}">
+const createRequestXml = (trackingNumber: string): string =>
+  `<TrackFieldRequest USERID="${process.env.USPS_USER_ID}">
   <Revision>1</Revision>
   <ClientIp>127.0.0.1</ClientIp>
   <SourceId>1</SourceId>
   <TrackID ID="${trackingNumber}"/>
   </TrackFieldRequest>`;
 
-export const trackUsps = (trackingNumber: string, { userId }: Credentials): Promise<TrackingInfo | Error> =>
+export const trackUsps = (trackingNumber: string): Promise<TrackingInfo | Error> =>
   got(
     'http://production.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
-      createRequestXml(trackingNumber, userId)
+      createRequestXml(trackingNumber)
   ).then(parse);

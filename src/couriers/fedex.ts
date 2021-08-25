@@ -27,13 +27,6 @@ import {
   __
 } from 'ramda';
 
-interface Credentials {
-  key: string;
-  password: string;
-  accountNumber: string;
-  meterNumber: string;
-}
-
 const getDate: (event: any) => number = pipe<any, string, number>(
   prop('Timestamp'),
   ifElse(either(isNil, isEmpty), always(undefined), Date.parse)
@@ -88,22 +81,19 @@ const parse: (response: any) => TrackingInfo = pipe<any, any, any, any, Tracking
   ])
 );
 
-const createRequestXml = (
-  trackingNumber: string,
-  { key, password, accountNumber, meterNumber }: Credentials
-): string =>
+const createRequestXml = (trackingNumber: string): string =>
   `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v9="http://fedex.com/ws/track/v9">
   <soapenv:Body>
   <TrackRequest xmlns="http://fedex.com/ws/track/v9">
   <WebAuthenticationDetail>
   <UserCredential>
-  <Key>${key}</Key>
-  <Password>${password}</Password>
+  <Key>${process.env.FEDEX_KEY}</Key>
+  <Password>${process.env.FEDEX_PASSWORD}</Password>
   </UserCredential>
   </WebAuthenticationDetail>
   <ClientDetail>
-  <AccountNumber>${accountNumber}</AccountNumber>
-  <MeterNumber>${meterNumber}</MeterNumber>
+  <AccountNumber>${process.env.FEDEX_ACCOUNT_NUMBER}</AccountNumber>
+  <MeterNumber>${process.env.FEDEX_METER_NUMBER}</MeterNumber>
   </ClientDetail>
   <Version>
   <ServiceId>trck</ServiceId>
@@ -122,14 +112,11 @@ const createRequestXml = (
   </soapenv:Body>
   </soapenv:Envelope>`;
 
-export const trackFedex = (
-  trackingNumber: string,
-  credentials: Credentials
-): Promise<TrackingInfo | Error> =>
+export const trackFedex = (trackingNumber: string): Promise<TrackingInfo | Error> =>
   got('https://ws.fedex.com:443/web-services', {
     method: 'POST',
     headers: {
       'Content-Type': 'text/xml'
     },
-    body: createRequestXml(trackingNumber, credentials)
+    body: createRequestXml(trackingNumber)
   }).then(parse);

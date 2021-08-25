@@ -29,10 +29,12 @@
     "fast-xml-parser": "^3.19.0",
     "got": "^11.8.2",
     "ramda": "^0.27.1",
+    "ts-tracking-number": "^1.0.13",
     "typescript": "^4.3.5"
   },
   "devDependencies": {
     "@types/ramda": "^0.27.44",
+    "dotenv": "^10.0.0",
     "prettier": "^2.3.2",
     "source-map-support": "^0.5.19",
     "ts-node": "^10.2.1"
