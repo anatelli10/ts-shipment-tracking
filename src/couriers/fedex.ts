@@ -63,7 +63,7 @@ const parse: (response: any) => TrackingInfo | undefined = pipe<
   TrackingInfo | undefined
 >(
   prop('body'),
-  partialRight(xmlToJson, [{ parseNodeValues: false }, undefined]),
+  partialRight(xmlToJson, [{ parseNodeValue: false }, undefined]),
   path([
     'SOAP-ENV:Envelope',
     'SOAP-ENV:Body',
