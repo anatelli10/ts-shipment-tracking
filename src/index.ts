@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { fedex, getTracking, s10, ups, usps } from 'ts-tracking-number';
 import { TrackingInfo } from './util/types';
 import { trackFedex } from './couriers/fedex';
