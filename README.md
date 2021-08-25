@@ -49,12 +49,18 @@ Create a ```credentials.json``` file with the following structure:
 }
 ```
 
-Input:
+Install rjbrooksjr's [ts-tracking-number](https://github.com/rjbrooksjr/ts-tracking-number) (recommended in order to use below implementation, but not required):
+
+```sh
+$ npm install ts-tracking-number
+```
+
+Example input:
 
 ```typescript
 import * as credentials from './credentials.json';
 import { TrackingInfo, trackFedex, trackUps, trackUsps } from 'ts-shipment-tracking';
-import { fedex, getTracking, s10, ups, usps } from 'ts-tracking-number';
+import { getTracking, fedex, ups, usps, s10 } from 'ts-tracking-number';
 
 const trackByCourier = (
   courierCode: string,
@@ -82,7 +88,7 @@ const track = (trackingNumber: string): Promise<TrackingInfo | Error> =>
 })();
 ```
 
-Output:
+Example output:
 
 ```typescript
 {
