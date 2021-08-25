@@ -49,6 +49,7 @@ USPS_USER_ID=
 Example input:
 
 ```typescript
+import 'dotenv/config';
 import { track, trackByCourierCode, trackFedex } from 'ts-shipment-tracking';
 
 (async () => {
