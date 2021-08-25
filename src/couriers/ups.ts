@@ -2,7 +2,6 @@ import * as codes from '../util/codes.json';
 import got from 'got';
 import { getTime, parse as dateParser } from 'date-fns';
 import { TrackingEvent, TrackingInfo } from '../util/types';
-import { ERR_RESPONSE_MISSING_TRACKING_DATA, ERR_TRACKING_NUMBER_NOT_FOUND } from '../util/errors';
 import {
   always,
   apply,
@@ -11,7 +10,6 @@ import {
   complement,
   compose,
   concat,
-  cond,
   converge,
   either,
   equals,
@@ -30,7 +28,6 @@ import {
   prop,
   propOr,
   props,
-  T,
   __
 } from 'ramda';
 
@@ -86,33 +83,35 @@ const getEstimatedDelivery: (packageDetails: any) => number = ifElse(
   always(undefined)
 );
 
-const parse: (response: any) => TrackingInfo = pipe<any, any, any, any, TrackingInfo>(
+const parse: (response: any) => TrackingInfo | undefined = pipe<
+  any,
+  any,
+  any,
+  any,
+  TrackingInfo | undefined
+>(
   prop('body'),
   JSON.parse,
   path(['trackResponse', 'shipment', '0']),
-  cond([
-    [
-      pathEq(['warnings', '0', 'message'], 'Tracking Information Not Found'),
-      always(ERR_TRACKING_NUMBER_NOT_FOUND)
-    ],
-    [isNil, always(ERR_RESPONSE_MISSING_TRACKING_DATA)],
-    [
-      T,
-      pipe(
-        path(['package', '0']),
-        applySpec<TrackingInfo>({
-          events: getTrackingEvents,
-          estimatedDelivery: getEstimatedDelivery
-        })
-      )
-    ]
-  ])
+  ifElse(
+    either(isNil, pathEq(['warnings', '0', 'message'], 'Tracking Information Not Found')),
+    always(undefined),
+    pipe(
+      path(['package', '0']),
+      applySpec<TrackingInfo>({
+        events: getTrackingEvents,
+        estimatedDelivery: getEstimatedDelivery
+      })
+    )
+  )
 );
 
-export const trackUps = (trackingNumber: string): Promise<TrackingInfo | Error> =>
+export const trackUps = (trackingNumber: string): Promise<TrackingInfo | undefined> =>
   got('https://onlinetools.ups.com/track/v1/details/' + trackingNumber, {
     headers: {
       AccessLicenseNumber: process.env.UPS_ACCESS_LICENSE_NUMBER,
       Accept: 'application/json'
     }
-  }).then(parse);
+  })
+    .then(parse)
+    .catch((e) => undefined);

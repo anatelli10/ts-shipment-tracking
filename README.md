@@ -50,23 +50,22 @@ Example input:
 
 ```typescript
 import 'dotenv/config';
-import { track, trackByCourierCode, trackFedex } from 'ts-shipment-tracking';
+import { TrackingInfo, track, trackByCourier, trackFedex } from 'ts-shipment-tracking';
 
 (async () => {
-  const exampleOne = await track('<fedex_or_ups_or_usps_tracking_number>');
+  const exampleOne: TrackingInfo | undefined = await track('<any_tracking_number>');
   console.log(exampleOne);
 
   // or
 
-  const exampleTwo = await trackByCourierCode('ups', '<ups_tracking_number>');
+  const exampleTwo: TrackingInfo | undefined = await trackByCourier('ups', '<ups_tracking_number>');
   console.log(exampleTwo);
 
   // or
 
-  const exampleThree = await trackFedex('<fedex_tracking_number>');
+  const exampleThree: TrackingInfo | undefined = await trackFedex('<fedex_tracking_number>');
   console.log(exampleThree);
 })();
-
 ```
 
 Example output:

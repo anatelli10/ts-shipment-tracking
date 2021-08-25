@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "commonjs", 
+    "module": "commonjs",
     "target": "es2018",
     "outDir": "./dist",
     "rootDir": "./src",
@@ -10,7 +10,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "esModuleInterop": true,
-    "strict": true,
+    "strict": true
   },
   "include": ["src/**/*.ts"]
 }

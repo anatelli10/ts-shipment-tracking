@@ -2,13 +2,11 @@ import * as codes from '../util/codes.json';
 import got from 'got';
 import { parse as xmlToJson } from 'fast-xml-parser';
 import { TrackingEvent, TrackingInfo } from '../util/types';
-import { ERR_RESPONSE_MISSING_TRACKING_DATA, ERR_TRACKING_NUMBER_NOT_FOUND } from '../util/errors';
 import {
   add,
   always,
   applySpec,
   complement,
-  cond,
   either,
   filter,
   flatten,
@@ -23,7 +21,6 @@ import {
   prop,
   propOr,
   props,
-  T,
   unless,
   __
 } from 'ramda';
@@ -71,21 +68,24 @@ const getEstimatedDelivery: (trackInfo: any) => number = pipe<any, string, numbe
   )
 );
 
-const parse: (response: any) => TrackingInfo = pipe<any, any, any, any, TrackingInfo>(
+const parse: (response: any) => TrackingInfo | undefined = pipe<
+  any,
+  any,
+  any,
+  any,
+  TrackingInfo | undefined
+>(
   prop('body'),
   partialRight(xmlToJson, [{ parseNodeValues: false }, undefined]),
   path(['TrackResponse', 'TrackInfo']),
-  cond([
-    [prop('Error'), always(ERR_TRACKING_NUMBER_NOT_FOUND)],
-    [isNil, always(ERR_RESPONSE_MISSING_TRACKING_DATA)],
-    [
-      T,
-      applySpec<TrackingInfo>({
-        events: getTrackingEvents,
-        estimatedDelivery: getEstimatedDelivery
-      })
-    ]
-  ])
+  ifElse(
+    either(isNil, prop('Error')),
+    always(undefined),
+    applySpec<TrackingInfo>({
+      events: getTrackingEvents,
+      estimatedDelivery: getEstimatedDelivery
+    })
+  )
 );
 
 const createRequestXml = (trackingNumber: string): string =>
@@ -96,8 +96,10 @@ const createRequestXml = (trackingNumber: string): string =>
   <TrackID ID="${trackingNumber}"/>
   </TrackFieldRequest>`;
 
-export const trackUsps = (trackingNumber: string): Promise<TrackingInfo | Error> =>
+export const trackUsps = (trackingNumber: string): Promise<TrackingInfo | undefined> =>
   got(
     'http://production.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
       createRequestXml(trackingNumber)
-  ).then(parse);
+  )
+    .then(parse)
+    .catch((e) => undefined);

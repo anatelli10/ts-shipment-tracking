@@ -2,12 +2,10 @@ import * as codes from '../util/codes.json';
 import got from 'got';
 import { parse as xmlToJson } from 'fast-xml-parser';
 import { TrackingEvent, TrackingInfo } from '../util/types';
-import { ERR_RESPONSE_MISSING_TRACKING_DATA, ERR_TRACKING_NUMBER_NOT_FOUND } from '../util/errors';
 import {
   always,
   applySpec,
   complement,
-  cond,
   either,
   filter,
   flatten,
@@ -23,7 +21,6 @@ import {
   prop,
   propOr,
   props,
-  T,
   __
 } from 'ramda';
 
@@ -58,7 +55,13 @@ const getTrackingEvents: (trackDetails: any) => TrackingEvent[] = pipe<
   TrackingEvent[]
 >(prop('Events'), flatten, map(getTrackingEvent));
 
-const parse: (response: any) => TrackingInfo = pipe<any, any, any, any, TrackingInfo>(
+const parse: (response: any) => TrackingInfo | undefined = pipe<
+  any,
+  any,
+  any,
+  any,
+  TrackingInfo | undefined
+>(
   prop('body'),
   partialRight(xmlToJson, [{ parseNodeValues: false }, undefined]),
   path([
@@ -68,17 +71,14 @@ const parse: (response: any) => TrackingInfo = pipe<any, any, any, any, Tracking
     'CompletedTrackDetails',
     'TrackDetails'
   ]),
-  cond([
-    [pathEq(['Notification', 'Severity'], 'ERROR'), always(ERR_TRACKING_NUMBER_NOT_FOUND)],
-    [isNil, always(ERR_RESPONSE_MISSING_TRACKING_DATA)],
-    [
-      T,
-      applySpec<TrackingInfo>({
-        events: getTrackingEvents,
-        estimatedDelivery: prop('EstimatedDeliveryTimestamp')
-      })
-    ]
-  ])
+  ifElse(
+    either(isNil, pathEq(['Notification', 'Severity'], 'ERROR')),
+    always(undefined),
+    applySpec<TrackingInfo>({
+      events: getTrackingEvents,
+      estimatedDelivery: prop('EstimatedDeliveryTimestamp')
+    })
+  )
 );
 
 const createRequestXml = (trackingNumber: string): string =>
@@ -112,11 +112,13 @@ const createRequestXml = (trackingNumber: string): string =>
   </soapenv:Body>
   </soapenv:Envelope>`;
 
-export const trackFedex = (trackingNumber: string): Promise<TrackingInfo | Error> =>
+export const trackFedex = (trackingNumber: string): Promise<TrackingInfo | undefined> =>
   got('https://ws.fedex.com:443/web-services', {
     method: 'POST',
     headers: {
       'Content-Type': 'text/xml'
     },
     body: createRequestXml(trackingNumber)
-  }).then(parse);
+  })
+    .then(parse)
+    .catch((e) => undefined);
