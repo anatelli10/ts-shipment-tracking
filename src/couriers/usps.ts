@@ -56,7 +56,7 @@ const getTrackingEvents: (trackInfo: any) => TrackingEvent[] = pipe<
   TrackingEvent[]
 >(props(['TrackSummary', 'TrackDetail']), flatten, map(getTrackingEvent));
 
-const getEstimatedDelivery: (trackInfo: any) => number = pipe<any, string, number>(
+const getEstimatedDeliveryDate: (trackInfo: any) => number = pipe<any, string, number>(
   prop('ExpectedDeliveryDate'),
   unless(
     isNil,
@@ -83,7 +83,7 @@ const parse: (response: any) => TrackingInfo | undefined = pipe<
     always(undefined),
     applySpec<TrackingInfo>({
       events: getTrackingEvents,
-      estimatedDelivery: getEstimatedDelivery
+      estimatedDeliveryDate: getEstimatedDeliveryDate
     })
   )
 );

@@ -81,7 +81,7 @@ Example output:
     },
     ...
   ],
-  estimatedDelivery: 1616996340000
+  estimatedDeliveryDate: 1616996340000
 }
 ```
 

@@ -71,7 +71,7 @@ const getTrackingEvents: (packageDetails: any) => TrackingEvent[] = pipe<any, an
   map(getTrackingEvent)
 );
 
-const getEstimatedDelivery: (packageDetails: any) => number = ifElse(
+const getEstimatedDeliveryDate: (packageDetails: any) => number = ifElse(
   pathEq(['deliveryTime', 'type'], 'EDW'),
   pipe(
     paths([
@@ -100,7 +100,7 @@ const parse: (response: any) => TrackingInfo | undefined = pipe<
       path(['package', '0']),
       applySpec<TrackingInfo>({
         events: getTrackingEvents,
-        estimatedDelivery: getEstimatedDelivery
+        estimatedDeliveryDate: getEstimatedDeliveryDate
       })
     )
   )

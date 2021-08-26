@@ -76,7 +76,7 @@ const parse: (response: any) => TrackingInfo | undefined = pipe<
     always(undefined),
     applySpec<TrackingInfo>({
       events: getTrackingEvents,
-      estimatedDelivery: prop('EstimatedDeliveryTimestamp')
+      estimatedDeliveryDate: prop('EstimatedDeliveryTimestamp')
     })
   )
 );
