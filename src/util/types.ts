@@ -2,7 +2,7 @@ export type TrackingEvent = {
   status?: string;
   label?: string;
   location?: string;
-  time?: number;
+  date?: number;
 };
 
 export type TrackingInfo = {
