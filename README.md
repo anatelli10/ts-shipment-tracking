@@ -84,6 +84,7 @@ Example output:
   estimatedDeliveryDate: 1616996340000
 }
 ```
+⚠️ Currently the output will be `undefined` when any error occurs (including http errors). Better error handling will be added in the future.
 
 Statuses:
 
