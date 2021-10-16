@@ -84,7 +84,7 @@ Example output:
   estimatedDeliveryDate: 1616996340000
 }
 ```
-⚠️ Currently the output will be `undefined` when any error occurs (including http errors). Better error handling will be added in the future.
+⚠️ Currently the output will be `undefined` when the courier api does not have tracking info for the given tracking number OR **when any error occurs** (js, http, api). Better error handling will be added in the future.
 
 Statuses:
 
