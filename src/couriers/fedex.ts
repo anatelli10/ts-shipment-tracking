@@ -133,7 +133,7 @@ export const trackFedex = async (
     throw new Error(`"${trackingNumber}" is not a valid FedEx tracking number.`);
   }
 
-  const get = await got('https://wsbeta.fedex.com:443/web-services', {
+  const get = await got('https://ws.fedex.com:443/web-services', {
     method: 'POST',
     headers: {
       'Content-Type': 'text/xml'

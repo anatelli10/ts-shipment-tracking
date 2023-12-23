@@ -124,7 +124,7 @@ export const trackUsps = async (
   }
 
   const get = await got(
-    'https://secure.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
+    'http://production.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
       createRequestXml(trackingNumber)
   );
 
