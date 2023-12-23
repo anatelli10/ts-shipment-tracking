@@ -38,8 +38,9 @@ export const trackByCourier = (
   return codeTrackingMap[courierCode](trackingNumber, options);
 };
 
-export const track = (trackingNumber: string): Promise<TrackingInfo> =>
+export const track = (trackingNumber: string, options?: TrackingOptions): Promise<TrackingInfo> =>
   trackByCourier(
     getTracking(trackingNumber, [fedex, ups, usps, s10])?.courier.code,
-    trackingNumber
+    trackingNumber,
+    options
   );
