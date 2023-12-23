@@ -98,12 +98,6 @@ Statuses:
 'DELIVERED'
 ```
 
-## Built With
-
-- [TypeScript](https://www.typescriptlang.org/)
-- [Ramda](https://ramdajs.com/)
-- [Node.js](https://nodejs.org/)
-
 ## Acknowledgements
 
 - [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number)
