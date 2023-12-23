@@ -12,7 +12,6 @@
     <li><a href="#about">About</a></li>
     <li><a href="#installation">Installation</a></li>
     <li><a href="#usage">Usage</a></li>
-    <li><a href="#built-with">Built With</a></li>
     <li><a href="#acknowledgements">Acknowledgements</a></li>
   </ol>
 </details>
@@ -58,7 +57,10 @@ import { TrackingInfo, track, trackByCourier, trackFedex } from 'ts-shipment-tra
 
   // or
 
-  const withSpecifiedCourierCode: TrackingInfo = await trackByCourier('ups', '<ups_tracking_number>');
+  const withSpecifiedCourierCode: TrackingInfo = await trackByCourier(
+    'ups',
+    '<ups_tracking_number>'
+  );
   console.log(withSpecifiedCourierCode);
 
   // or
@@ -105,4 +107,3 @@ Statuses:
 - [date-fns](https://date-fns.org/)
 - [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser)
 - [got](https://github.com/sindresorhus/got)
-
