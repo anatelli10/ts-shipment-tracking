@@ -1,7 +1,7 @@
 import * as codes from '../util/codes.json';
 import got from 'got';
 import { getTime, parse as dateParser } from 'date-fns';
-import { TrackingEvent, TrackingInfo } from '../util/types';
+import { TrackingEvent, TrackingInfo, TrackingOptions } from '../util/types';
 import {
   always,
   apply,
@@ -30,6 +30,7 @@ import {
   props,
   __
 } from 'ramda';
+import { getTracking, ups } from 'ts-tracking-number';
 
 const getDate: (date: string, time: string) => number = pipe<any, Date, number>(
   converge(dateParser, [
@@ -83,35 +84,64 @@ const getEstimatedDeliveryDate: (packageDetails: any) => number = ifElse(
   always(undefined)
 );
 
-const parse: (response: any) => TrackingInfo | undefined = pipe<
-  any,
-  any,
-  any,
-  any,
-  TrackingInfo | undefined
->(
-  prop('body'),
-  JSON.parse,
-  path(['trackResponse', 'shipment', '0']),
-  ifElse(
-    either(isNil, pathEq(['warnings', '0', 'message'], 'Tracking Information Not Found')),
-    always(undefined),
-    pipe(
-      path(['package', '0']),
-      applySpec<TrackingInfo>({
-        events: getTrackingEvents,
-        estimatedDeliveryDate: getEstimatedDeliveryDate
-      })
-    )
-  )
-);
+// todo: type
+const parse = (response: any): TrackingInfo => {
+  const { body } = response;
 
-export const trackUps = (trackingNumber: string): Promise<TrackingInfo | undefined> =>
-  got('https://onlinetools.ups.com/track/v1/details/' + trackingNumber, {
+  const json = JSON.parse(body);
+
+  // todo: type
+  const shipment: any = path(['trackResponse', 'shipment', '0'], json);
+
+  if (
+    shipment == null ||
+    'Tracking Information Not Found' === path(['warnings', '0', 'message'], shipment)
+  ) {
+    throw new Error(`Error retrieving UPS tracking.
+    
+    Shipment: 
+    ${JSON.stringify(shipment)}
+    
+    Full response body:
+    ${JSON.stringify(body)}
+    `);
+  }
+
+  const pkg = path(['package', 0], shipment);
+
+  const events = getTrackingEvents(pkg);
+  const estimatedDeliveryDate = getEstimatedDeliveryDate(pkg);
+
+  return {
+    events,
+    estimatedDeliveryDate
+  };
+};
+
+export const trackUps = async (
+  trackingNumber: string,
+  options?: TrackingOptions
+): Promise<TrackingInfo> => {
+  ['UPS_ACCESS_LICENSE_NUMBER'].forEach((key) => {
+    if (!process.env[key]) {
+      throw new Error(`Environment variable ${key} must be set in order to use USPS tracking.`);
+    }
+  });
+
+  const tracking = getTracking(trackingNumber, [ups]);
+
+  if (options?.bypassValidation !== true && !tracking) {
+    throw new Error(`"${trackingNumber}" is not a valid USPS tracking number.`);
+  }
+
+  const get = await got('https://onlinetools.ups.com/track/v1/details/' + trackingNumber, {
     headers: {
       AccessLicenseNumber: process.env.UPS_ACCESS_LICENSE_NUMBER,
       Accept: 'application/json'
     }
-  })
-    .then(parse)
-    .catch((e) => undefined);
+  });
+
+  const parsed = parse(get);
+
+  return parsed;
+};

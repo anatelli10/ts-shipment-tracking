@@ -9,3 +9,7 @@ export type TrackingInfo = {
   events: TrackingEvent[];
   estimatedDeliveryDate?: number;
 };
+
+export type TrackingOptions = {
+  bypassValidation: boolean;
+};

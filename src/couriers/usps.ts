@@ -1,7 +1,7 @@
 import * as codes from '../util/codes.json';
 import got from 'got';
 import { parse as xmlToJson } from 'fast-xml-parser';
-import { TrackingEvent, TrackingInfo } from '../util/types';
+import { TrackingEvent, TrackingInfo, TrackingOptions } from '../util/types';
 import {
   add,
   always,
@@ -15,7 +15,6 @@ import {
   isNil,
   join,
   map,
-  partialRight,
   path,
   pipe,
   prop,
@@ -24,6 +23,7 @@ import {
   unless,
   __
 } from 'ramda';
+import { getTracking, s10, usps } from 'ts-tracking-number';
 
 const getDate: (event: any) => number = pipe<any, string[], string[], number>(
   props(['EventDate', 'EventTime']),
@@ -68,25 +68,36 @@ const getEstimatedDeliveryDate: (trackInfo: any) => number = pipe<any, string, n
   )
 );
 
-const parse: (response: any) => TrackingInfo | undefined = pipe<
-  any,
-  any,
-  any,
-  any,
-  TrackingInfo | undefined
->(
-  prop('body'),
-  partialRight(xmlToJson, [{ parseNodeValue: false }, undefined]),
-  path(['TrackResponse', 'TrackInfo']),
-  ifElse(
-    either(isNil, prop('Error')),
-    always(undefined),
-    applySpec<TrackingInfo>({
-      events: getTrackingEvents,
-      estimatedDeliveryDate: getEstimatedDeliveryDate
-    })
-  )
-);
+// todo: type
+const parse = (response: any) => {
+  const { body } = response;
+
+  const json = xmlToJson(body, { parseNodeValue: false });
+
+  // todo: type
+  const trackInfo: any = path(['TrackResponse', 'TrackInfo'], json);
+
+  if (trackInfo == null || json.Error || trackInfo.Error) {
+    throw new Error(`Error retrieving USPS tracking.
+
+    TrackInfo:
+    ${JSON.stringify(trackInfo)}
+
+    Full response body:
+    ${JSON.stringify(body)}
+    `);
+  }
+
+  const events = getTrackingEvents(trackInfo);
+  const estimatedDeliveryDate = getEstimatedDeliveryDate(trackInfo);
+
+  console.log('events', events);
+
+  return {
+    events,
+    estimatedDeliveryDate
+  };
+};
 
 const createRequestXml = (trackingNumber: string): string =>
   `<TrackFieldRequest USERID="${process.env.USPS_USER_ID}">
@@ -96,10 +107,28 @@ const createRequestXml = (trackingNumber: string): string =>
   <TrackID ID="${trackingNumber}"/>
   </TrackFieldRequest>`;
 
-export const trackUsps = (trackingNumber: string): Promise<TrackingInfo | undefined> =>
-  got(
-    'http://production.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
+export const trackUsps = async (
+  trackingNumber: string,
+  options?: TrackingOptions
+): Promise<TrackingInfo> => {
+  ['USPS_USER_ID'].forEach((key) => {
+    if (!process.env[key]) {
+      throw new Error(`Environment variable ${key} must be set in order to use USPS tracking.`);
+    }
+  });
+
+  const tracking = getTracking(trackingNumber, [usps, s10]);
+
+  if (options?.bypassValidation !== true && !tracking) {
+    throw new Error(`"${trackingNumber}" is not a valid USPS tracking number.`);
+  }
+
+  const get = await got(
+    'https://secure.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
       createRequestXml(trackingNumber)
-  )
-    .then(parse)
-    .catch((e) => undefined);
+  );
+
+  const parsed = parse(get);
+
+  return parsed;
+};

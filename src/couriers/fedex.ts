@@ -1,7 +1,7 @@
 import * as codes from '../util/codes.json';
 import got from 'got';
 import { parse as xmlToJson } from 'fast-xml-parser';
-import { TrackingEvent, TrackingInfo } from '../util/types';
+import { TrackingEvent, TrackingInfo, TrackingOptions } from '../util/types';
 import {
   always,
   applySpec,
@@ -14,15 +14,14 @@ import {
   isNil,
   join,
   map,
-  partialRight,
   path,
-  pathEq,
   pipe,
   prop,
   propOr,
   props,
   __
 } from 'ramda';
+import { fedex, getTracking } from 'ts-tracking-number';
 
 const getDate: (event: any) => number = pipe<any, string, number>(
   prop('Timestamp'),
@@ -55,31 +54,37 @@ const getTrackingEvents: (trackDetails: any) => TrackingEvent[] = pipe<
   TrackingEvent[]
 >(prop('Events'), flatten, map(getTrackingEvent));
 
-const parse: (response: any) => TrackingInfo | undefined = pipe<
-  any,
-  any,
-  any,
-  any,
-  TrackingInfo | undefined
->(
-  prop('body'),
-  partialRight(xmlToJson, [{ parseNodeValue: false }, undefined]),
-  path([
-    'SOAP-ENV:Envelope',
-    'SOAP-ENV:Body',
-    'TrackReply',
-    'CompletedTrackDetails',
-    'TrackDetails'
-  ]),
-  ifElse(
-    either(isNil, pathEq(['Notification', 'Severity'], 'ERROR')),
-    always(undefined),
-    applySpec<TrackingInfo>({
-      events: getTrackingEvents,
-      estimatedDeliveryDate: prop('EstimatedDeliveryTimestamp')
-    })
-  )
-);
+// todo: type
+const parse = (response: any): TrackingInfo => {
+  const { body } = response;
+
+  const json = xmlToJson(body, { parseNodeValue: false });
+
+  // todo: type
+  const trackDetails: any = path(
+    ['SOAP-ENV:Envelope', 'SOAP-ENV:Body', 'TrackReply', 'CompletedTrackDetails', 'TrackDetails'],
+    json
+  );
+
+  if (trackDetails == null || 'ERROR' === path(['Notification', 'Severity'], trackDetails)) {
+    throw new Error(`Error retrieving FedEx tracking.
+    
+    TrackDetails: 
+    ${JSON.stringify(trackDetails)}
+    
+    Full response body:
+    ${JSON.stringify(body)}
+    `);
+  }
+
+  const events = getTrackingEvents(trackDetails);
+  const estimatedDeliveryDate = trackDetails.EstimatedDeliveryTimestamp;
+
+  return {
+    events,
+    estimatedDeliveryDate
+  };
+};
 
 const createRequestXml = (trackingNumber: string): string =>
   `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v9="http://fedex.com/ws/track/v9">
@@ -112,13 +117,31 @@ const createRequestXml = (trackingNumber: string): string =>
   </soapenv:Body>
   </soapenv:Envelope>`;
 
-export const trackFedex = (trackingNumber: string): Promise<TrackingInfo | undefined> =>
-  got('https://ws.fedex.com:443/web-services', {
+export const trackFedex = async (
+  trackingNumber: string,
+  options?: TrackingOptions
+): Promise<TrackingInfo> => {
+  ['FEDEX_KEY', 'FEDEX_PASSWORD', 'FEDEX_ACCOUNT_NUMBER', 'FEDEX_METER_NUMBER'].forEach((key) => {
+    if (!process.env[key]) {
+      throw new Error(`Environment variable ${key} must be set in order to use FedEx tracking.`);
+    }
+  });
+
+  const tracking = getTracking(trackingNumber, [fedex]);
+
+  if (options?.bypassValidation !== true && !tracking) {
+    throw new Error(`"${trackingNumber}" is not a valid FedEx tracking number.`);
+  }
+
+  const get = await got('https://wsbeta.fedex.com:443/web-services', {
     method: 'POST',
     headers: {
       'Content-Type': 'text/xml'
     },
     body: createRequestXml(trackingNumber)
-  })
-    .then(parse)
-    .catch((e) => undefined);
+  });
+
+  const parsed = parse(get);
+
+  return parsed;
+};
