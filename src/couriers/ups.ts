@@ -124,7 +124,7 @@ export const trackUps = async (
 ): Promise<TrackingInfo> => {
   ['UPS_ACCESS_LICENSE_NUMBER'].forEach((key) => {
     if (!process.env[key]) {
-      throw new Error(`Environment variable ${key} must be set in order to use USPS tracking.`);
+      throw new Error(`Environment variable ${key} must be set in order to use UPS tracking.`);
     }
   });
 
