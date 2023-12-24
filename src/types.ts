@@ -4,7 +4,6 @@ import * as couriers from './couriers';
 export type Couriers = typeof couriers;
 
 export enum TrackingStatus {
-  UNAVAILABLE = 'UNAVAILABLE',
   LABEL_CREATED = 'LABEL_CREATED',
   IN_TRANSIT = 'IN_TRANSIT',
   OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY',
@@ -15,6 +14,9 @@ export enum TrackingStatus {
 }
 
 export type TrackingEvent = {
+  /**
+   * Previously contained status 'UNAVAILABLE', this status has been removed in favor of `undefined`
+   */
   status?: TrackingStatus;
   label?: string;
   location?: string;

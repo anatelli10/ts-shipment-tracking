@@ -92,7 +92,6 @@ All statuses:
 ```typescript
 // src/types.ts
 export enum TrackingStatus {
-  UNAVAILABLE = 'UNAVAILABLE',
   LABEL_CREATED = 'LABEL_CREATED',
   IN_TRANSIT = 'IN_TRANSIT',
   OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY',

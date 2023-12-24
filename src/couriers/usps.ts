@@ -56,7 +56,7 @@ const getTrackingEvent = ({
 }: TrackInfo): TrackingEvent => ({
   status:
     (EventCode ? statusCodes[EventCode] : TrackingStatus.IN_TRANSIT) ||
-    TrackingStatus.UNAVAILABLE,
+    undefined,
   label: Event,
   location: getLocation({
     city: EventCity,

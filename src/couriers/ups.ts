@@ -88,7 +88,7 @@ const getTrackingEvent = ({
   status,
   time,
 }: ShipmentPackage): TrackingEvent => ({
-  status: (status && getStatus(status)) || TrackingStatus.UNAVAILABLE,
+  status: (status && getStatus(status)) || undefined,
   label: status?.description,
   location: getLocation({
     city: location?.address?.city,

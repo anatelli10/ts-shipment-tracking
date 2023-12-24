@@ -46,7 +46,7 @@ const getTrackingEvent = ({
   EventType,
   Timestamp,
 }: TrackDetails): TrackingEvent => ({
-  status: EventType ? statusCodes[EventType] : TrackingStatus.UNAVAILABLE,
+  status: (EventType && statusCodes[EventType]) || undefined,
   label: EventDescription,
   location: getLocation({
     city: Address?.City,
