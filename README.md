@@ -68,12 +68,14 @@ import {
   // or
 
   try {
-    const withSpecifiedCourierCode: TrackingInfo = await track(
+    // Bypass the automatic courier detection
+    const tracking: TrackingInfo = await track(
       '<ups_tracking_number>',
+      // Supports autocomplete!
       { courierCode: 'ups' }
     );
 
-    console.log(withSpecifiedCourierCode);
+    console.log(tracking);
   } catch (err) {
     console.log(err);
   }
