@@ -49,7 +49,12 @@ Example input:
 
 ```typescript
 import 'dotenv/config';
-import { TrackingInfo, track, trackByCourier, trackFedex } from 'ts-shipment-tracking';
+import {
+  TrackingInfo,
+  track,
+  trackByCourier,
+  trackFedex,
+} from 'ts-shipment-tracking';
 
 (async () => {
   const tragnostic: TrackingInfo = await track('<any_tracking_number>');
@@ -57,7 +62,10 @@ import { TrackingInfo, track, trackByCourier, trackFedex } from 'ts-shipment-tra
 
   // or
 
-  const withSpecifiedCourierCode: TrackingInfo = await track('<ups_tracking_number>', { courierCode: 'ups' });
+  const withSpecifiedCourierCode: TrackingInfo = await track(
+    '<ups_tracking_number>',
+    { courierCode: 'ups' }
+  );
   console.log(withSpecifiedCourierCode);
 })();
 ```
@@ -75,11 +83,12 @@ Example output:
     },
     ...
   ],
-  estimatedDeliveryDate: 1616996340000
+  estimatedDeliveryTime: 1616996340000
 }
 ```
 
-All statuses:  
+All statuses:
+
 ```typescript
 // src/types.ts
 export enum TrackingStatus {

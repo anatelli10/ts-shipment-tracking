@@ -59,12 +59,12 @@ export const parseTrackInfo = <CourierCode>(
   }
 
   const events = parseOptions.getTrackingEvents(trackInfo);
-  const estimatedDeliveryDate =
+  const estimatedDeliveryTime =
     parseOptions.getEstimatedDeliveryDate?.(trackInfo);
 
   return {
     events,
-    estimatedDeliveryDate,
+    estimatedDeliveryTime,
   };
 };
 

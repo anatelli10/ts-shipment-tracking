@@ -23,7 +23,10 @@ export type TrackingEvent = {
 
 export type TrackingInfo = {
   events: TrackingEvent[];
-  estimatedDeliveryDate?: number;
+  /**
+   * Previously named `estimatedDeliveryDate`
+   */
+  estimatedDeliveryTime?: number;
 };
 
 export type TrackingOptions = {
