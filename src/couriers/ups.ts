@@ -72,7 +72,7 @@ const getTrackingEvent: (activity: any) => TrackingEvent =
     status: getStatus,
     label: path(['status', 'description']),
     location: getLocation,
-    date: pipe(props(['date', 'time']), apply(getDate)),
+    time: pipe(props(['date', 'time']), apply(getDate)),
   });
 
 const getTrackingEvents: (packageDetails: any) => TrackingEvent[] = pipe<

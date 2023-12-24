@@ -18,7 +18,10 @@ export type TrackingEvent = {
   status?: TrackingStatus;
   label?: string;
   location?: string;
-  date?: number;
+  /**
+   * Previously named `date`
+   */
+  time?: number;
 };
 
 export type TrackingInfo = {

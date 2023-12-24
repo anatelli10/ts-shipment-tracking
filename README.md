@@ -79,7 +79,7 @@ Example output:
       status: 'IN_TRANSIT',
       label: 'Arrived at FedEx location',
       location: 'LEBANON TN US 37090',
-      date: 1616823540000
+      time: 1616823540000
     },
     ...
   ],

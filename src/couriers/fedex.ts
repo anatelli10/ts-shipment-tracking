@@ -58,7 +58,7 @@ const getTrackingEvent: (event: any) => TrackingEvent =
     status: getStatus,
     label: prop('EventDescription'),
     location: getLocation,
-    date: getDate,
+    time: getDate,
   });
 
 const getTrackingEvents: (trackDetails: any) => TrackingEvent[] = pipe<
