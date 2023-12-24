@@ -4,10 +4,13 @@ import * as couriers from './couriers';
 export type Couriers = typeof couriers;
 
 export type TrackingStatus =
+  | 'UNAVAILABLE'
   | 'LABEL_CREATED'
+  | 'IN_TRANSIT'
   | 'OUT_FOR_DELIVERY'
   | 'DELIVERY_ATTEMPTED'
   | 'RETURNED_TO_SENDER'
+  | 'EXCEPTION'
   | 'DELIVERED';
 
 export type StatusCodeDictionary = Partial<
