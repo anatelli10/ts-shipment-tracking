@@ -1,10 +1,16 @@
 import { reverseOneToManyDictionary } from './utils';
-import { Courier, ParseOptions, TrackingEvent } from '../types';
+import {
+  Courier,
+  CourierCodeDictionary,
+  ParseOptions,
+  TrackingEvent,
+} from '../types';
 import { getTime, parse as dateParser } from 'date-fns';
 // prettier-ignore
 import { always, apply, applySpec, both, complement, compose, concat, converge, either, equals, filter, ifElse, includes, isEmpty, isNil, join, map, nthArg, path, pathEq, paths, pipe, prop, propOr, props, __ } from 'ramda';
 import { ups } from 'ts-tracking-number';
 
+// prettier-ignore
 const codes = reverseOneToManyDictionary({
   LABEL_CREATED: [
     'M', 'P',
@@ -24,7 +30,7 @@ const codes = reverseOneToManyDictionary({
   DELIVERED: [
     'D',
   ],
-} as const);
+} as const as CourierCodeDictionary);
 
 const getDate: (date: string, time: string) => number = pipe<any, Date, number>(
   converge(dateParser, [

@@ -3,8 +3,19 @@ import * as couriers from './couriers';
 
 export type Couriers = typeof couriers;
 
+export type TrackingStatus =
+  | 'LABEL_CREATED'
+  | 'OUT_FOR_DELIVERY'
+  | 'DELIVERY_ATTEMPTED'
+  | 'RETURNED_TO_SENDER'
+  | 'DELIVERED';
+
+export type CourierCodeDictionary = Partial<
+  Readonly<Record<TrackingStatus, readonly string[]>>
+>;
+
 export type TrackingEvent = {
-  status?: string;
+  status?: TrackingStatus;
   label?: string;
   location?: string;
   date?: number;

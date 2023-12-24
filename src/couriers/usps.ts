@@ -1,5 +1,10 @@
 import { reverseOneToManyDictionary } from './utils';
-import { Courier, ParseOptions, TrackingEvent } from '../types';
+import {
+  Courier,
+  CourierCodeDictionary,
+  ParseOptions,
+  TrackingEvent,
+} from '../types';
 // prettier-ignore
 import { add, always, applySpec, complement, either, filter, flatten, ifElse, isEmpty, isNil, join, map, pipe, prop, propOr, props, unless, __ } from 'ramda';
 import { s10, usps } from 'ts-tracking-number';
@@ -23,7 +28,7 @@ const codes = reverseOneToManyDictionary({
   DELIVERED: [
     '01', 'I0', 'BR', 'DN', 'AH', 'DL', 'OK', '60', '17',
   ],
-} as const);
+} as const as CourierCodeDictionary);
 
 const getDate: (event: any) => number = pipe<any, string[], string[], number>(
   props(['EventDate', 'EventTime']),
