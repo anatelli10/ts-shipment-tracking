@@ -72,7 +72,7 @@ export type Courier<Code> = {
   requiredEnvVars?: string[];
   /**
    * Makes an API request for the given tracking number
-   * Must return either JSON or an XML string
+   * Must return either JS object or XML string
    */
   request: (trackingNumber: string) => Promise<any | string>;
   parseOptions: ParseOptions;
