@@ -1,9 +1,8 @@
 import { getTracking } from 'ts-tracking-number';
-import { Courier, TrackingInfo, TrackingOptions } from './util/types';
 import * as couriers from './couriers';
+import { Courier, Couriers, TrackingInfo, TrackingOptions } from './types';
 
-export type Couriers = typeof couriers;
-export * from './util/types';
+export * from './types';
 
 // A map of courier definitions keyed by their code
 const courierCodeMap = Object.values(couriers).reduce(

@@ -1,6 +1,6 @@
-import * as codes from '../util/codes.json';
-import { parse as xmlToJson } from 'fast-xml-parser';
-import { Courier, TrackingEvent } from '../util/types';
+import * as codes from '../codes.json';
+import { Courier, TrackingEvent } from '../types';
+import { parser } from '../utils';
 import {
   add,
   always,
@@ -82,9 +82,7 @@ const getEstimatedDeliveryDate: (trackInfo: any) => number = pipe<
 );
 
 const parse = (response: any) => {
-  const { body } = response;
-
-  const json = xmlToJson(body, { parseNodeValue: false });
+  const json = parser.parse(response);
 
   const trackInfo: any = path(['TrackResponse', 'TrackInfo'], json);
 
@@ -95,7 +93,7 @@ const parse = (response: any) => {
     ${JSON.stringify(trackInfo)}
 
     Full response body:
-    ${JSON.stringify(body)}
+    ${JSON.stringify(response)}
     `);
   }
 
@@ -124,7 +122,7 @@ const USPS: Courier<'usps'> = {
     fetch(
       'http://production.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
         createRequestXml(trackingNumber)
-    ),
+    ).then((res) => res.text()),
   parse,
   tsTrackingNumberCouriers: [s10, usps],
 };

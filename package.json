@@ -26,7 +26,7 @@
   "license": "MIT",
   "dependencies": {
     "date-fns": "^2.22.1",
-    "fast-xml-parser": "^3.19.0",
+    "fast-xml-parser": "^4.3.2",
     "ramda": "^0.27.1",
     "ts-tracking-number": "^1.0.13",
     "typescript": "^4.3.5"

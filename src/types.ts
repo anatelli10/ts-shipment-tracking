@@ -1,6 +1,7 @@
 import { TrackingCourier } from 'ts-tracking-number';
-import * as couriers from '../couriers';
-import { Couriers } from '..';
+import * as couriers from './couriers';
+
+export type Couriers = typeof couriers;
 
 export type TrackingEvent = {
   status?: string;
@@ -18,7 +19,7 @@ export type TrackingOptions = {
   /**
    * Explicitly define a courier code to bypass auto-detection
    */
-  courierCode: 's10' | Couriers[keyof Couriers]['code'];
+  courierCode?: Couriers[keyof Couriers]['code'];
 };
 
 export type Courier<Code> = {

@@ -1,6 +1,6 @@
-import * as codes from '../util/codes.json';
-import { parse as xmlToJson } from 'fast-xml-parser';
-import { Courier, TrackingEvent, TrackingInfo } from '../util/types';
+import * as codes from '../codes.json';
+import { Courier, TrackingEvent, TrackingInfo } from '../types';
+import { parser } from '../utils';
 import {
   always,
   applySpec,
@@ -61,9 +61,7 @@ const getTrackingEvents: (trackDetails: any) => TrackingEvent[] = pipe<
 >(prop('Events'), flatten, map(getTrackingEvent));
 
 const parse = (response: any): TrackingInfo => {
-  const { body } = response;
-
-  const json = xmlToJson(body, { parseNodeValue: false });
+  const json = parser.parse(response);
 
   const trackDetails: any = path(
     [
@@ -86,7 +84,7 @@ const parse = (response: any): TrackingInfo => {
     ${JSON.stringify(trackDetails)}
     
     Full response body:
-    ${JSON.stringify(body)}
+    ${JSON.stringify(response)}
     `);
   }
 
@@ -140,13 +138,14 @@ const FedEx: Courier<'fedex'> = {
     'FEDEX_METER_NUMBER',
   ],
   request: (trackingNumber: string) =>
-    fetch('https://ws.fedex.com:443/web-services', {
+    // ws.fedex (without beta) for prod?
+    fetch('https://wsbeta.fedex.com:443/web-services', {
       method: 'POST',
       headers: {
         'Content-Type': 'text/xml',
       },
       body: createRequestXml(trackingNumber),
-    }),
+    }).then((res) => res.text()),
   parse,
   tsTrackingNumberCouriers: [fedex],
 };

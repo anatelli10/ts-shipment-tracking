@@ -1,6 +1,6 @@
-import * as codes from '../util/codes.json';
+import * as codes from '../codes.json';
 import { getTime, parse as dateParser } from 'date-fns';
-import { Courier, TrackingEvent, TrackingInfo } from '../util/types';
+import { Courier, TrackingEvent, TrackingInfo } from '../types';
 import {
   always,
   apply,
@@ -98,9 +98,7 @@ const getEstimatedDeliveryDate: (packageDetails: any) => number = ifElse(
 );
 
 const parse = (response: any): TrackingInfo => {
-  const { body } = response;
-
-  const json = JSON.parse(body);
+  const json = JSON.parse(response);
 
   const shipment: any = path(['trackResponse', 'shipment', '0'], json);
 
@@ -115,7 +113,7 @@ const parse = (response: any): TrackingInfo => {
     ${JSON.stringify(shipment)}
     
     Full response body:
-    ${JSON.stringify(body)}
+    ${JSON.stringify(response)}
     `);
   }
 
@@ -135,7 +133,9 @@ const UPS: Courier<'ups'> = {
   code: 'ups',
   requiredEnvVars: ['UPS_ACCESS_LICENSE_NUMBER'],
   request: (trackingNumber: string) =>
-    fetch('https://onlinetools.ups.com/track/v1/details/' + trackingNumber),
+    fetch(
+      'https://onlinetools.ups.com/track/v1/details/' + trackingNumber
+    ).then((res) => res.json()),
   parse,
   tsTrackingNumberCouriers: [ups],
 };

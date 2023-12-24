@@ -57,16 +57,8 @@ import { TrackingInfo, track, trackByCourier, trackFedex } from 'ts-shipment-tra
 
   // or
 
-  const withSpecifiedCourierCode: TrackingInfo = await trackByCourier(
-    'ups',
-    '<ups_tracking_number>'
-  );
+  const withSpecifiedCourierCode: TrackingInfo = await track('<ups_tracking_number>', { courierCode: 'ups' });
   console.log(withSpecifiedCourierCode);
-
-  // or
-
-  const withCourierFunction: TrackingInfo = await trackFedex('<fedex_tracking_number>');
-  console.log(withCourierFunction);
 })();
 ```
 
