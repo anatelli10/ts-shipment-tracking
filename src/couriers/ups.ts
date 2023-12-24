@@ -1,35 +1,30 @@
-import * as codes from '../codes.json';
+import { reverseOneToManyDictionary } from './utils';
+import { Courier, ParseOptions, TrackingEvent } from '../types';
 import { getTime, parse as dateParser } from 'date-fns';
-import { Courier, TrackingEvent, TrackingInfo } from '../types';
-import {
-  always,
-  apply,
-  applySpec,
-  both,
-  complement,
-  compose,
-  concat,
-  converge,
-  either,
-  equals,
-  filter,
-  ifElse,
-  includes,
-  isEmpty,
-  isNil,
-  join,
-  map,
-  nthArg,
-  path,
-  pathEq,
-  paths,
-  pipe,
-  prop,
-  propOr,
-  props,
-  __,
-} from 'ramda';
+// prettier-ignore
+import { always, apply, applySpec, both, complement, compose, concat, converge, either, equals, filter, ifElse, includes, isEmpty, isNil, join, map, nthArg, path, pathEq, paths, pipe, prop, propOr, props, __ } from 'ramda';
 import { ups } from 'ts-tracking-number';
+
+const codes = reverseOneToManyDictionary({
+  LABEL_CREATED: [
+    'M', 'P',
+  ],
+  IN_TRANSIT: [
+    'I', 'DO', 'DD', 'W',
+  ],
+  OUT_FOR_DELIVERY: [
+    'O',
+  ],
+  RETURNED_TO_SENDER: [
+    'RS',
+  ],
+  EXCEPTION: [
+    'MV', 'X', 'NA',
+  ],
+  DELIVERED: [
+    'D',
+  ],
+} as const);
 
 const getDate: (date: string, time: string) => number = pipe<any, Date, number>(
   converge(dateParser, [
@@ -64,10 +59,7 @@ const getStatus: (activity: any) => string = pipe<any, any, string>(
       compose(includes('DELIVERY ATTEMPT'), prop('description'))
     ),
     always('DELIVERY_ATTEMPTED'),
-    pipe<any, string, string>(
-      prop('type'),
-      propOr('UNAVAILABLE', __, codes.ups)
-    )
+    pipe<any, string, string>(prop('type'), propOr('UNAVAILABLE', __, codes))
   )
 );
 
@@ -97,46 +89,26 @@ const getEstimatedDeliveryDate: (packageDetails: any) => number = ifElse(
   always(undefined)
 );
 
-const parse = (response: any): TrackingInfo => {
-  const json = JSON.parse(response);
-
-  const shipment: any = path(['trackResponse', 'shipment', '0'], json);
-
-  if (
-    shipment == null ||
+const parseOptions: ParseOptions = {
+  shipmentItemPath: ['trackResponse', 'shipment', '0', 'package', 0],
+  checkForError: (json) =>
     'Tracking Information Not Found' ===
-      path(['warnings', '0', 'message'], shipment)
-  ) {
-    throw new Error(`Error retrieving UPS tracking.
-    
-    Shipment: 
-    ${JSON.stringify(shipment)}
-    
-    Full response body:
-    ${JSON.stringify(response)}
-    `);
-  }
-
-  const pkg = path(['package', 0], shipment);
-
-  const events = getTrackingEvents(pkg);
-  const estimatedDeliveryDate = getEstimatedDeliveryDate(pkg);
-
-  return {
-    events,
-    estimatedDeliveryDate,
-  };
+    path(['trackResponse', 'shipment', '0', 'warnings', '0', 'message'], json),
+  getTrackingEvents,
+  getEstimatedDeliveryDate,
 };
+
+const request = (trackingNumber: string) =>
+  fetch('https://onlinetools.ups.com/track/v1/details/' + trackingNumber).then(
+    (res) => res.json()
+  );
 
 const UPS: Courier<'ups'> = {
   name: 'UPS',
   code: 'ups',
   requiredEnvVars: ['UPS_ACCESS_LICENSE_NUMBER'],
-  request: (trackingNumber: string) =>
-    fetch(
-      'https://onlinetools.ups.com/track/v1/details/' + trackingNumber
-    ).then((res) => res.json()),
-  parse,
+  request,
+  parseOptions,
   tsTrackingNumberCouriers: [ups],
 };
 

@@ -1,26 +1,34 @@
-import * as codes from '../codes.json';
-import { Courier, TrackingEvent, TrackingInfo } from '../types';
-import { parser } from '../utils';
-import {
-  always,
-  applySpec,
-  complement,
-  either,
-  filter,
-  flatten,
-  ifElse,
-  isEmpty,
-  isNil,
-  join,
-  map,
-  path,
-  pipe,
-  prop,
-  propOr,
-  props,
-  __,
-} from 'ramda';
+import { reverseOneToManyDictionary } from './utils';
+import { Courier, ParseOptions, TrackingEvent } from '../types';
+// prettier-ignore
+import { always, applySpec, complement, either, filter, flatten, ifElse, isEmpty, isNil, join, map, path, pipe, prop, propOr, props, __ } from 'ramda';
 import { fedex } from 'ts-tracking-number';
+
+// prettier-ignore
+const codes = reverseOneToManyDictionary({
+  LABEL_CREATED: [
+    'PU', 'PX', 'OC',
+  ],
+  IN_TRANSIT: [
+    'AA', 'AC', 'AD', 'AF', 'AP', 'AR', 'AX', 'CH', 'DD', 'DP',
+    'DR', 'DS', 'DY', 'EA', 'ED', 'EO', 'EP', 'FD', 'HL', 'IT',
+    'IX', 'LO', 'PF', 'PL', 'PM', 'RR', 'RM', 'RC', 'SF', 'SP',
+    'TR', 'CC', 'CD', 'CP', 'OF', 'OX', 'PD', 'SH', 'CU', 'BR',
+    'TP',
+  ],
+  OUT_FOR_DELIVERY: [
+    'OD',
+  ],
+  RETURNED_TO_SENDER: [
+    'RS', 'RP', 'LP', 'RG', 'RD',
+  ],
+  EXCEPTION: [
+    'CA', 'DE', 'SE',
+  ],
+  DELIVERED: [
+    'DL',
+  ],
+} as const);
 
 const getDate: (event: any) => number = pipe<any, string, number>(
   prop('Timestamp'),
@@ -42,7 +50,7 @@ const getLocation: (event: any) => string = pipe<
 
 const getStatus: (event: any) => string = pipe<any, string, string>(
   prop('EventType'),
-  propOr('UNAVAILABLE', __, codes.fedex)
+  propOr('UNAVAILABLE', __, codes)
 );
 
 const getTrackingEvent: (event: any) => TrackingEvent =
@@ -59,43 +67,6 @@ const getTrackingEvents: (trackDetails: any) => TrackingEvent[] = pipe<
   string[],
   TrackingEvent[]
 >(prop('Events'), flatten, map(getTrackingEvent));
-
-const parse = (response: any): TrackingInfo => {
-  const json = parser.parse(response);
-
-  const trackDetails: any = path(
-    [
-      'SOAP-ENV:Envelope',
-      'SOAP-ENV:Body',
-      'TrackReply',
-      'CompletedTrackDetails',
-      'TrackDetails',
-    ],
-    json
-  );
-
-  if (
-    trackDetails == null ||
-    'ERROR' === path(['Notification', 'Severity'], trackDetails)
-  ) {
-    throw new Error(`Error retrieving FedEx tracking.
-    
-    TrackDetails: 
-    ${JSON.stringify(trackDetails)}
-    
-    Full response body:
-    ${JSON.stringify(response)}
-    `);
-  }
-
-  const events = getTrackingEvents(trackDetails);
-  const estimatedDeliveryDate = trackDetails.EstimatedDeliveryTimestamp;
-
-  return {
-    events,
-    estimatedDeliveryDate,
-  };
-};
 
 const createRequestXml = (trackingNumber: string): string =>
   `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v9="http://fedex.com/ws/track/v9">
@@ -128,6 +99,32 @@ const createRequestXml = (trackingNumber: string): string =>
   </soapenv:Body>
   </soapenv:Envelope>`;
 
+const parseOptions: ParseOptions = {
+  isXML: true,
+  shipmentItemPath: [
+    'SOAP-ENV:Envelope',
+    'SOAP-ENV:Body',
+    'TrackReply',
+    'CompletedTrackDetails',
+    'TrackDetails',
+  ],
+  checkForError: (_, trackDetails) =>
+    'ERROR' === path(['Notification', 'Severity'], trackDetails),
+  getTrackingEvents,
+  getEstimatedDeliveryDate: (trackDetails) =>
+    trackDetails.EstimatedDeliveryTimestamp,
+};
+
+const request = (trackingNumber: string) =>
+  // ws.fedex (without beta) for prod?
+  fetch('https://wsbeta.fedex.com:443/web-services', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/xml',
+    },
+    body: createRequestXml(trackingNumber),
+  }).then((res) => res.text());
+
 const FedEx: Courier<'fedex'> = {
   name: 'FedEx',
   code: 'fedex',
@@ -137,16 +134,8 @@ const FedEx: Courier<'fedex'> = {
     'FEDEX_ACCOUNT_NUMBER',
     'FEDEX_METER_NUMBER',
   ],
-  request: (trackingNumber: string) =>
-    // ws.fedex (without beta) for prod?
-    fetch('https://wsbeta.fedex.com:443/web-services', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/xml',
-      },
-      body: createRequestXml(trackingNumber),
-    }).then((res) => res.text()),
-  parse,
+  request,
+  parseOptions,
   tsTrackingNumberCouriers: [fedex],
 };
 

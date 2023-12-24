@@ -22,11 +22,40 @@ export type TrackingOptions = {
   courierCode?: Couriers[keyof Couriers]['code'];
 };
 
+export type ParseOptions = {
+  /**
+   * !!!IMPORTANT!!!
+   * This flag must be enabled to automatically parse XML responses.
+   */
+  isXML?: boolean;
+  /**
+   * The path to the item in the response which represents the shipment.
+   * e.g. for..
+   *  - FedEx = TrackDetails
+   *  - UPS = shipment[0] so [..., 'shipment', 0]
+   *  - USPS = TrackInfo
+   *
+   * See usages
+   */
+  shipmentItemPath: (string | number)[];
+  /**
+   * A function which returns true if an error is detected in either the entire json response
+   * or the shipment item (convenience).
+   */
+  checkForError: (json: any, shipment: any) => boolean;
+  getTrackingEvents: (shipment: any) => TrackingEvent[];
+  getEstimatedDeliveryDate?: (shipment: any) => number | undefined;
+};
+
 export type Courier<Code> = {
   name: string;
   code: Code;
   requiredEnvVars?: string[];
-  request: (trackingNumber: string) => Promise<any>;
-  parse: <T>(response: T) => TrackingInfo;
+  /**
+   * Makes an API request for the given tracking number
+   * Must return either JSON or an XML string
+   */
+  request: (trackingNumber: string) => Promise<any | string>;
+  parseOptions: ParseOptions;
   tsTrackingNumberCouriers: readonly TrackingCourier[];
 };
