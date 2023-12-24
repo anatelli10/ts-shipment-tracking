@@ -25,7 +25,11 @@ export const getCourierCode = (trackingNumber: string) => {
   const tracking = getTracking(trackingNumber, supportedCouriers);
 
   if (!tracking) {
-    throw new Error(`"${trackingNumber}" is not a valid tracking number.`);
+    throw new Error(
+      `"${trackingNumber}" is not a valid tracking number for supported couriers. Supported couriers are ${Object.values(
+        couriers
+      ).map(({ name }) => name)}.`
+    );
   }
 
   return tracking.courier.code;
