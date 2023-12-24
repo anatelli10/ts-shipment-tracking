@@ -1,37 +1,51 @@
-import * as codes from '../util/codes.json';
-import got from 'got';
-import { parse as xmlToJson } from 'fast-xml-parser';
-import { TrackingEvent, TrackingInfo, TrackingOptions } from '../util/types';
+import { reverseOneToManyDictionary } from './utils';
 import {
-  add,
-  always,
-  applySpec,
-  complement,
-  either,
-  filter,
-  flatten,
-  ifElse,
-  isEmpty,
-  isNil,
-  join,
-  map,
-  path,
-  pipe,
-  prop,
-  propOr,
-  props,
-  unless,
-  __
-} from 'ramda';
-import { getTracking, s10, usps } from 'ts-tracking-number';
+  Courier,
+  CourierCodeDictionary,
+  ParseOptions,
+  TrackingEvent,
+} from '../types';
+// prettier-ignore
+import { add, always, applySpec, complement, either, filter, flatten, ifElse, isEmpty, isNil, join, map, pipe, prop, propOr, props, unless, __ } from 'ramda';
+import { s10, usps } from 'ts-tracking-number';
+
+// prettier-ignore
+const codes = reverseOneToManyDictionary({
+  LABEL_CREATED: [
+    'MA', 'GX',
+  ],
+  OUT_FOR_DELIVERY: [
+    '59', 'DG', 'OF',
+  ],
+  DELIVERY_ATTEMPTED: [
+    '02', '52', '51', '53', '54', '55', '56', '57', 'CA', 'CM',
+    'H0', 'NH',
+  ],
+  RETURNED_TO_SENDER: [
+    '09', '28', '29', '31', 'H8', '04', 'RD', 'RE', '05', '21',
+    '22', '23', '24', '25', '26', '27', 'BA', 'K4', 'K5', 'K6', 'K7', 'RT',
+  ],
+  DELIVERED: [
+    '01', 'I0', 'BR', 'DN', 'AH', 'DL', 'OK', '60', '17',
+  ],
+} as const as CourierCodeDictionary);
 
 const getDate: (event: any) => number = pipe<any, string[], string[], number>(
   props(['EventDate', 'EventTime']),
   filter(complement(isEmpty)),
-  ifElse(isEmpty, always(undefined), pipe<string[], string, number>(join(' '), Date.parse))
+  ifElse(
+    isEmpty,
+    always(undefined),
+    pipe<string[], string, number>(join(' '), Date.parse)
+  )
 );
 
-const getLocation: (event: any) => string = pipe<any, string[], string[], string>(
+const getLocation: (event: any) => string = pipe<
+  any,
+  string[],
+  string[],
+  string
+>(
   props(['EventCity', 'EventState', 'EventCountry', 'EventZIPCode']),
   filter(complement(either(isNil, isEmpty))),
   ifElse(isEmpty, always(undefined), join(' '))
@@ -39,15 +53,16 @@ const getLocation: (event: any) => string = pipe<any, string[], string[], string
 
 const getStatus: (event: any) => string = pipe<any, string, string>(
   prop('EventCode'),
-  propOr('IN_TRANSIT', __, codes.usps)
+  propOr('IN_TRANSIT', __, codes)
 );
 
-const getTrackingEvent: (event: any) => TrackingEvent = applySpec<TrackingEvent>({
-  status: getStatus,
-  label: prop('Event'),
-  location: getLocation,
-  date: getDate
-});
+const getTrackingEvent: (event: any) => TrackingEvent =
+  applySpec<TrackingEvent>({
+    status: getStatus,
+    label: prop('Event'),
+    location: getLocation,
+    date: getDate,
+  });
 
 const getTrackingEvents: (trackInfo: any) => TrackingEvent[] = pipe<
   any,
@@ -56,7 +71,11 @@ const getTrackingEvents: (trackInfo: any) => TrackingEvent[] = pipe<
   TrackingEvent[]
 >(props(['TrackSummary', 'TrackDetail']), flatten, map(getTrackingEvent));
 
-const getEstimatedDeliveryDate: (trackInfo: any) => number = pipe<any, string, number>(
+const getEstimatedDeliveryDate: (trackInfo: any) => number = pipe<
+  any,
+  string,
+  number
+>(
   prop('ExpectedDeliveryDate'),
   unless(
     isNil,
@@ -68,37 +87,6 @@ const getEstimatedDeliveryDate: (trackInfo: any) => number = pipe<any, string, n
   )
 );
 
-// todo: type
-const parse = (response: any) => {
-  const { body } = response;
-
-  const json = xmlToJson(body, { parseNodeValue: false });
-
-  // todo: type
-  const trackInfo: any = path(['TrackResponse', 'TrackInfo'], json);
-
-  if (trackInfo == null || json.Error || trackInfo.Error) {
-    throw new Error(`Error retrieving USPS tracking.
-
-    TrackInfo:
-    ${JSON.stringify(trackInfo)}
-
-    Full response body:
-    ${JSON.stringify(body)}
-    `);
-  }
-
-  const events = getTrackingEvents(trackInfo);
-  const estimatedDeliveryDate = getEstimatedDeliveryDate(trackInfo);
-
-  console.log('events', events);
-
-  return {
-    events,
-    estimatedDeliveryDate
-  };
-};
-
 const createRequestXml = (trackingNumber: string): string =>
   `<TrackFieldRequest USERID="${process.env.USPS_USER_ID}">
   <Revision>1</Revision>
@@ -107,28 +95,28 @@ const createRequestXml = (trackingNumber: string): string =>
   <TrackID ID="${trackingNumber}"/>
   </TrackFieldRequest>`;
 
-export const trackUsps = async (
-  trackingNumber: string,
-  options?: TrackingOptions
-): Promise<TrackingInfo> => {
-  ['USPS_USER_ID'].forEach((key) => {
-    if (!process.env[key]) {
-      throw new Error(`Environment variable ${key} must be set in order to use USPS tracking.`);
-    }
-  });
-
-  const tracking = getTracking(trackingNumber, [usps, s10]);
-
-  if (options?.bypassValidation !== true && !tracking) {
-    throw new Error(`"${trackingNumber}" is not a valid USPS tracking number.`);
-  }
-
-  const get = await got(
-    'http://production.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
-      createRequestXml(trackingNumber)
-  );
-
-  const parsed = parse(get);
-
-  return parsed;
+const parseOptions: ParseOptions = {
+  isXML: true,
+  shipmentItemPath: ['TrackResponse', 'TrackInfo'],
+  checkForError: (json, trackInfo) => json.Error || trackInfo.Error,
+  getTrackingEvents,
+  getEstimatedDeliveryDate,
 };
+
+const request = (trackingNumber: string) =>
+  fetch(
+    // production.shippingapis for prod?
+    'https://secure.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
+      createRequestXml(trackingNumber)
+  ).then((res) => res.text());
+
+const USPS: Courier<'usps'> = {
+  name: 'USPS',
+  code: 'usps',
+  requiredEnvVars: ['USPS_USER_ID'],
+  request,
+  parseOptions,
+  tsTrackingNumberCouriers: [s10, usps],
+};
+
+export default USPS;
