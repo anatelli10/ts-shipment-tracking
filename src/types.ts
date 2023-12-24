@@ -10,7 +10,7 @@ export type TrackingStatus =
   | 'RETURNED_TO_SENDER'
   | 'DELIVERED';
 
-export type TrackingCodeDictionary = Partial<
+export type StatusCodeDictionary = Partial<
   Readonly<Record<TrackingStatus, readonly string[]>>
 >;
 

@@ -1,7 +1,7 @@
 import { reverseOneToManyDictionary } from './utils';
 import {
   Courier,
-  TrackingCodeDictionary,
+  StatusCodeDictionary,
   ParseOptions,
   TrackingEvent,
 } from '../types';
@@ -33,7 +33,7 @@ const codes = reverseOneToManyDictionary({
   DELIVERED: [
     'DL',
   ],
-} as const as TrackingCodeDictionary);
+} as const as StatusCodeDictionary);
 
 const getDate: (event: any) => number = pipe<any, string, number>(
   prop('Timestamp'),
