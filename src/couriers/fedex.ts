@@ -1,39 +1,34 @@
 import { reverseOneToManyDictionary } from './utils';
-import {
-  Courier,
-  StatusCodeDictionary,
-  ParseOptions,
-  TrackingEvent,
-} from '../types';
+import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
 // prettier-ignore
 import { always, applySpec, complement, either, filter, flatten, ifElse, isEmpty, isNil, join, map, path, pipe, prop, propOr, props, __ } from 'ramda';
 import { fedex } from 'ts-tracking-number';
 
 // prettier-ignore
 const codes = reverseOneToManyDictionary({
-  LABEL_CREATED: [
+  [TrackingStatus.LABEL_CREATED]: [
     'PU', 'PX', 'OC',
   ],
-  IN_TRANSIT: [
+  [TrackingStatus.IN_TRANSIT]: [
     'AA', 'AC', 'AD', 'AF', 'AP', 'AR', 'AX', 'CH', 'DD', 'DP',
     'DR', 'DS', 'DY', 'EA', 'ED', 'EO', 'EP', 'FD', 'HL', 'IT',
     'IX', 'LO', 'PF', 'PL', 'PM', 'RR', 'RM', 'RC', 'SF', 'SP',
     'TR', 'CC', 'CD', 'CP', 'OF', 'OX', 'PD', 'SH', 'CU', 'BR',
     'TP',
   ],
-  OUT_FOR_DELIVERY: [
+  [TrackingStatus.OUT_FOR_DELIVERY]: [
     'OD',
   ],
-  RETURNED_TO_SENDER: [
+  [TrackingStatus.RETURNED_TO_SENDER]: [
     'RS', 'RP', 'LP', 'RG', 'RD',
   ],
-  EXCEPTION: [
+  [TrackingStatus.EXCEPTION]: [
     'CA', 'DE', 'SE',
   ],
-  DELIVERED: [
+  [TrackingStatus.DELIVERED]: [
     'DL',
   ],
-} as const as StatusCodeDictionary);
+} as const);
 
 const getDate: (event: any) => number = pipe<any, string, number>(
   prop('Timestamp'),
@@ -55,7 +50,7 @@ const getLocation: (event: any) => string = pipe<
 
 const getStatus: (event: any) => string = pipe<any, string, string>(
   prop('EventType'),
-  propOr('UNAVAILABLE', __, codes)
+  propOr(TrackingStatus.UNAVAILABLE, __, codes)
 );
 
 const getTrackingEvent: (event: any) => TrackingEvent =

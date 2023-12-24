@@ -1,10 +1,5 @@
 import { reverseOneToManyDictionary } from './utils';
-import {
-  Courier,
-  StatusCodeDictionary,
-  ParseOptions,
-  TrackingEvent,
-} from '../types';
+import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
 import { getTime, parse as dateParser } from 'date-fns';
 // prettier-ignore
 import { always, apply, applySpec, both, complement, compose, concat, converge, either, equals, filter, ifElse, includes, isEmpty, isNil, join, map, nthArg, path, pathEq, paths, pipe, prop, propOr, props, __ } from 'ramda';
@@ -12,25 +7,25 @@ import { ups } from 'ts-tracking-number';
 
 // prettier-ignore
 const codes = reverseOneToManyDictionary({
-  LABEL_CREATED: [
+  [TrackingStatus.LABEL_CREATED]: [
     'M', 'P',
   ],
-  IN_TRANSIT: [
+  [TrackingStatus.IN_TRANSIT]: [
     'I', 'DO', 'DD', 'W',
   ],
-  OUT_FOR_DELIVERY: [
+  [TrackingStatus.OUT_FOR_DELIVERY]: [
     'O',
   ],
-  RETURNED_TO_SENDER: [
+  [TrackingStatus.RETURNED_TO_SENDER]: [
     'RS',
   ],
-  EXCEPTION: [
+  [TrackingStatus.EXCEPTION]: [
     'MV', 'X', 'NA',
   ],
-  DELIVERED: [
+  [TrackingStatus.DELIVERED]: [
     'D',
   ],
-} as const as StatusCodeDictionary);
+} as const);
 
 const getDate: (date: string, time: string) => number = pipe<any, Date, number>(
   converge(dateParser, [
@@ -64,8 +59,11 @@ const getStatus: (activity: any) => string = pipe<any, any, string>(
       equals('EXCEPTION'),
       compose(includes('DELIVERY ATTEMPT'), prop('description'))
     ),
-    always('DELIVERY_ATTEMPTED'),
-    pipe<any, string, string>(prop('type'), propOr('UNAVAILABLE', __, codes))
+    always(TrackingStatus.DELIVERY_ATTEMPTED),
+    pipe<any, string, string>(
+      prop('type'),
+      propOr(TrackingStatus.UNAVAILABLE, __, codes)
+    )
   )
 );
 

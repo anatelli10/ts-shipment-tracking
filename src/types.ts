@@ -3,19 +3,16 @@ import * as couriers from './couriers';
 
 export type Couriers = typeof couriers;
 
-export type TrackingStatus =
-  | 'UNAVAILABLE'
-  | 'LABEL_CREATED'
-  | 'IN_TRANSIT'
-  | 'OUT_FOR_DELIVERY'
-  | 'DELIVERY_ATTEMPTED'
-  | 'RETURNED_TO_SENDER'
-  | 'EXCEPTION'
-  | 'DELIVERED';
-
-export type StatusCodeDictionary = Partial<
-  Readonly<Record<TrackingStatus, readonly string[]>>
->;
+export enum TrackingStatus {
+  UNAVAILABLE = 'UNAVAILABLE',
+  LABEL_CREATED = 'LABEL_CREATED',
+  IN_TRANSIT = 'IN_TRANSIT',
+  OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY',
+  DELIVERY_ATTEMPTED = 'DELIVERY_ATTEMPTED',
+  RETURNED_TO_SENDER = 'RETURNED_TO_SENDER',
+  EXCEPTION = 'EXCEPTION',
+  DELIVERED = 'DELIVERED',
+}
 
 export type TrackingEvent = {
   status?: TrackingStatus;
