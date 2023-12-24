@@ -1,7 +1,6 @@
 import * as codes from '../util/codes.json';
-import got from 'got';
 import { parse as xmlToJson } from 'fast-xml-parser';
-import { TrackingEvent, TrackingInfo, TrackingOptions } from '../util/types';
+import { Courier, TrackingEvent, TrackingInfo } from '../util/types';
 import {
   always,
   applySpec,
@@ -19,16 +18,22 @@ import {
   prop,
   propOr,
   props,
-  __
+  __,
 } from 'ramda';
-import { fedex, getTracking } from 'ts-tracking-number';
+import { fedex } from 'ts-tracking-number';
 
 const getDate: (event: any) => number = pipe<any, string, number>(
   prop('Timestamp'),
   ifElse(either(isNil, isEmpty), always(undefined), Date.parse)
 );
 
-const getLocation: (event: any) => string = pipe<any, any, string[], string[], string>(
+const getLocation: (event: any) => string = pipe<
+  any,
+  any,
+  string[],
+  string[],
+  string
+>(
   prop('Address'),
   props(['City', 'StateOrProvinceCode', 'CountryCode', 'PostalCode']),
   filter(complement(either(isNil, isEmpty))),
@@ -40,12 +45,13 @@ const getStatus: (event: any) => string = pipe<any, string, string>(
   propOr('UNAVAILABLE', __, codes.fedex)
 );
 
-const getTrackingEvent: (event: any) => TrackingEvent = applySpec<TrackingEvent>({
-  status: getStatus,
-  label: prop('EventDescription'),
-  location: getLocation,
-  date: getDate
-});
+const getTrackingEvent: (event: any) => TrackingEvent =
+  applySpec<TrackingEvent>({
+    status: getStatus,
+    label: prop('EventDescription'),
+    location: getLocation,
+    date: getDate,
+  });
 
 const getTrackingEvents: (trackDetails: any) => TrackingEvent[] = pipe<
   any,
@@ -54,19 +60,26 @@ const getTrackingEvents: (trackDetails: any) => TrackingEvent[] = pipe<
   TrackingEvent[]
 >(prop('Events'), flatten, map(getTrackingEvent));
 
-// todo: type
 const parse = (response: any): TrackingInfo => {
   const { body } = response;
 
   const json = xmlToJson(body, { parseNodeValue: false });
 
-  // todo: type
   const trackDetails: any = path(
-    ['SOAP-ENV:Envelope', 'SOAP-ENV:Body', 'TrackReply', 'CompletedTrackDetails', 'TrackDetails'],
+    [
+      'SOAP-ENV:Envelope',
+      'SOAP-ENV:Body',
+      'TrackReply',
+      'CompletedTrackDetails',
+      'TrackDetails',
+    ],
     json
   );
 
-  if (trackDetails == null || 'ERROR' === path(['Notification', 'Severity'], trackDetails)) {
+  if (
+    trackDetails == null ||
+    'ERROR' === path(['Notification', 'Severity'], trackDetails)
+  ) {
     throw new Error(`Error retrieving FedEx tracking.
     
     TrackDetails: 
@@ -82,7 +95,7 @@ const parse = (response: any): TrackingInfo => {
 
   return {
     events,
-    estimatedDeliveryDate
+    estimatedDeliveryDate,
   };
 };
 
@@ -117,31 +130,25 @@ const createRequestXml = (trackingNumber: string): string =>
   </soapenv:Body>
   </soapenv:Envelope>`;
 
-export const trackFedex = async (
-  trackingNumber: string,
-  options?: TrackingOptions
-): Promise<TrackingInfo> => {
-  ['FEDEX_KEY', 'FEDEX_PASSWORD', 'FEDEX_ACCOUNT_NUMBER', 'FEDEX_METER_NUMBER'].forEach((key) => {
-    if (!process.env[key]) {
-      throw new Error(`Environment variable ${key} must be set in order to use FedEx tracking.`);
-    }
-  });
-
-  const tracking = getTracking(trackingNumber, [fedex]);
-
-  if (options?.bypassValidation !== true && !tracking) {
-    throw new Error(`"${trackingNumber}" is not a valid FedEx tracking number.`);
-  }
-
-  const get = await got('https://ws.fedex.com:443/web-services', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'text/xml'
-    },
-    body: createRequestXml(trackingNumber)
-  });
-
-  const parsed = parse(get);
-
-  return parsed;
+const FedEx: Courier<'fedex'> = {
+  name: 'FedEx',
+  code: 'fedex',
+  requiredEnvVars: [
+    'FEDEX_KEY',
+    'FEDEX_PASSWORD',
+    'FEDEX_ACCOUNT_NUMBER',
+    'FEDEX_METER_NUMBER',
+  ],
+  request: (trackingNumber: string) =>
+    fetch('https://ws.fedex.com:443/web-services', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml',
+      },
+      body: createRequestXml(trackingNumber),
+    }),
+  parse,
+  tsTrackingNumberCouriers: [fedex],
 };
+
+export default FedEx;

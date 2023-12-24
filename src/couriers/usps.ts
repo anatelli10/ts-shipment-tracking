@@ -1,7 +1,6 @@
 import * as codes from '../util/codes.json';
-import got from 'got';
 import { parse as xmlToJson } from 'fast-xml-parser';
-import { TrackingEvent, TrackingInfo, TrackingOptions } from '../util/types';
+import { Courier, TrackingEvent } from '../util/types';
 import {
   add,
   always,
@@ -21,17 +20,26 @@ import {
   propOr,
   props,
   unless,
-  __
+  __,
 } from 'ramda';
-import { getTracking, s10, usps } from 'ts-tracking-number';
+import { s10, usps } from 'ts-tracking-number';
 
 const getDate: (event: any) => number = pipe<any, string[], string[], number>(
   props(['EventDate', 'EventTime']),
   filter(complement(isEmpty)),
-  ifElse(isEmpty, always(undefined), pipe<string[], string, number>(join(' '), Date.parse))
+  ifElse(
+    isEmpty,
+    always(undefined),
+    pipe<string[], string, number>(join(' '), Date.parse)
+  )
 );
 
-const getLocation: (event: any) => string = pipe<any, string[], string[], string>(
+const getLocation: (event: any) => string = pipe<
+  any,
+  string[],
+  string[],
+  string
+>(
   props(['EventCity', 'EventState', 'EventCountry', 'EventZIPCode']),
   filter(complement(either(isNil, isEmpty))),
   ifElse(isEmpty, always(undefined), join(' '))
@@ -42,12 +50,13 @@ const getStatus: (event: any) => string = pipe<any, string, string>(
   propOr('IN_TRANSIT', __, codes.usps)
 );
 
-const getTrackingEvent: (event: any) => TrackingEvent = applySpec<TrackingEvent>({
-  status: getStatus,
-  label: prop('Event'),
-  location: getLocation,
-  date: getDate
-});
+const getTrackingEvent: (event: any) => TrackingEvent =
+  applySpec<TrackingEvent>({
+    status: getStatus,
+    label: prop('Event'),
+    location: getLocation,
+    date: getDate,
+  });
 
 const getTrackingEvents: (trackInfo: any) => TrackingEvent[] = pipe<
   any,
@@ -56,7 +65,11 @@ const getTrackingEvents: (trackInfo: any) => TrackingEvent[] = pipe<
   TrackingEvent[]
 >(props(['TrackSummary', 'TrackDetail']), flatten, map(getTrackingEvent));
 
-const getEstimatedDeliveryDate: (trackInfo: any) => number = pipe<any, string, number>(
+const getEstimatedDeliveryDate: (trackInfo: any) => number = pipe<
+  any,
+  string,
+  number
+>(
   prop('ExpectedDeliveryDate'),
   unless(
     isNil,
@@ -68,13 +81,11 @@ const getEstimatedDeliveryDate: (trackInfo: any) => number = pipe<any, string, n
   )
 );
 
-// todo: type
 const parse = (response: any) => {
   const { body } = response;
 
   const json = xmlToJson(body, { parseNodeValue: false });
 
-  // todo: type
   const trackInfo: any = path(['TrackResponse', 'TrackInfo'], json);
 
   if (trackInfo == null || json.Error || trackInfo.Error) {
@@ -91,11 +102,9 @@ const parse = (response: any) => {
   const events = getTrackingEvents(trackInfo);
   const estimatedDeliveryDate = getEstimatedDeliveryDate(trackInfo);
 
-  console.log('events', events);
-
   return {
     events,
-    estimatedDeliveryDate
+    estimatedDeliveryDate,
   };
 };
 
@@ -107,28 +116,17 @@ const createRequestXml = (trackingNumber: string): string =>
   <TrackID ID="${trackingNumber}"/>
   </TrackFieldRequest>`;
 
-export const trackUsps = async (
-  trackingNumber: string,
-  options?: TrackingOptions
-): Promise<TrackingInfo> => {
-  ['USPS_USER_ID'].forEach((key) => {
-    if (!process.env[key]) {
-      throw new Error(`Environment variable ${key} must be set in order to use USPS tracking.`);
-    }
-  });
-
-  const tracking = getTracking(trackingNumber, [usps, s10]);
-
-  if (options?.bypassValidation !== true && !tracking) {
-    throw new Error(`"${trackingNumber}" is not a valid USPS tracking number.`);
-  }
-
-  const get = await got(
-    'http://production.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
-      createRequestXml(trackingNumber)
-  );
-
-  const parsed = parse(get);
-
-  return parsed;
+const USPS: Courier<'usps'> = {
+  name: 'USPS',
+  code: 'usps',
+  requiredEnvVars: ['USPS_USER_ID'],
+  request: (trackingNumber: string) =>
+    fetch(
+      'http://production.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
+        createRequestXml(trackingNumber)
+    ),
+  parse,
+  tsTrackingNumberCouriers: [s10, usps],
 };
+
+export default USPS;

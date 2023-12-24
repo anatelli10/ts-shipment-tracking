@@ -1,46 +1,72 @@
-import { fedex, getTracking, s10, ups, usps } from 'ts-tracking-number';
-import { TrackingInfo, TrackingOptions } from './util/types';
-import { trackFedex } from './couriers/fedex';
-import { trackUps } from './couriers/ups';
-import { trackUsps } from './couriers/usps';
+import { getTracking } from 'ts-tracking-number';
+import { Courier, TrackingInfo, TrackingOptions } from './util/types';
+import * as couriers from './couriers';
 
-export { TrackingInfo, TrackingEvent, TrackingOptions } from './util/types';
-export { trackFedex } from './couriers/fedex';
-export { trackUps } from './couriers/ups';
-export { trackUsps } from './couriers/usps';
+export type Couriers = typeof couriers;
+export * from './util/types';
 
-const codeTrackingMap = {
-  fedex: trackFedex,
-  ups: trackUps,
-  usps: trackUsps,
-  s10: trackUsps
-} as const;
+// A map of courier definitions keyed by their code
+const courierCodeMap = Object.values(couriers).reduce(
+  (map, courier) => ({ ...map, [courier.code]: courier }),
+  // Initialize the map to use USPS tracking for S10 codes
+  { s10: couriers.USPS } as { s10: Courier<typeof couriers.USPS.code> } & {
+    // The output type isn't inferenced automatically, manually specify it
+    [CourierCode in keyof Couriers as Couriers[CourierCode]['code']]: Couriers[CourierCode];
+  }
+);
 
-function assertValidCode(value: string | undefined): asserts value is keyof typeof codeTrackingMap {
-  if (value == null || !(value in codeTrackingMap))
-    throw new Error(
-      `"${value}" is not a valid courier code.
-      Valid courier codes are ${Object.keys(codeTrackingMap)}`
-    );
-}
+const supportedCouriers = Object.values(couriers).flatMap(
+  ({ tsTrackingNumberCouriers }) => tsTrackingNumberCouriers
+);
 
-export const trackByCourier = (
-  courierCode: string | undefined,
-  trackingNumber: string,
-  options?: TrackingOptions
-): Promise<TrackingInfo> => {
-  if (courierCode === undefined) {
+const getCourierCode = (trackingNumber: string) => {
+  const tracking = getTracking(trackingNumber, supportedCouriers);
+
+  if (!tracking) {
     throw new Error(`"${trackingNumber}" is not a valid tracking number.`);
   }
 
-  assertValidCode(courierCode);
-
-  return codeTrackingMap[courierCode](trackingNumber, options);
+  return tracking.courier.code;
 };
 
-export const track = (trackingNumber: string, options?: TrackingOptions): Promise<TrackingInfo> =>
-  trackByCourier(
-    getTracking(trackingNumber, [fedex, ups, usps, s10])?.courier.code,
-    trackingNumber,
-    options
-  );
+function assertValidCode(
+  value: string | undefined
+): asserts value is keyof typeof courierCodeMap {
+  if (value == null || !(value in courierCodeMap))
+    throw new Error(
+      `"${value}" is not a valid courier code.
+      Valid courier codes are ${Object.keys(courierCodeMap)}`
+    );
+}
+
+const trackCourier = async <CourierCode>(
+  courier: Courier<CourierCode>,
+  trackingNumber: string
+): Promise<TrackingInfo> => {
+  courier.requiredEnvVars?.forEach((v) => {
+    if (!process.env[v]) {
+      throw new Error(
+        `Environment variable "${v}" must be set in order to use ${courier.name} tracking.`
+      );
+    }
+  });
+
+  const response = await courier.request(trackingNumber);
+  const trackingInfo = courier.parse(response);
+
+  return trackingInfo;
+};
+
+export const track = async (
+  trackingNumber: string,
+  options?: TrackingOptions
+): Promise<TrackingInfo> => {
+  const courierCode = options?.courierCode ?? getCourierCode(trackingNumber);
+
+  assertValidCode(courierCode);
+
+  const courier = courierCodeMap[courierCode];
+  const trackingInfo = await trackCourier(courier, trackingNumber);
+
+  return trackingInfo;
+};
