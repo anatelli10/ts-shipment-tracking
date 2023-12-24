@@ -39,14 +39,37 @@ export type TrackingOptions = {
    * Explicitly define a courier code to bypass auto-detection
    */
   courierCode?: Couriers[keyof Couriers]['code'];
+  /**
+   * By default, `process.env.NODE_ENV` is used to determine whether to use courier's dev or prod env.
+   * Explicitly define an environment to override this.
+   */
+  env?: 'development' | 'production';
+};
+
+export type FetchOptions = {
+  prodUrl: string;
+  devUrl: string;
+  /**
+   * Arguments to use for the fetch request built using the URL (determined by environment) and tracking number
+   */
+  parameters: {
+    /**
+     * The first argument, typically a url
+     */
+    input: (url: string, trackingNumber: string) => Parameters<typeof fetch>[0];
+    /**
+     * The second argument, typically options
+     */
+    init?: (url: string, trackingNumber: string) => Parameters<typeof fetch>[1];
+  };
+  /**
+   * Should the response be parsed with `res.text()` or `res.json()`?
+   * XML also gets parsed into a JS object
+   */
+  responseType: 'XML' | 'JSON';
 };
 
 export type ParseOptions = {
-  /**
-   * !!!IMPORTANT!!!
-   * This flag must be enabled to automatically parse XML responses.
-   */
-  isXML?: boolean;
   /**
    * The path to the item in the response which represents the shipment.
    * e.g. for..
@@ -61,7 +84,7 @@ export type ParseOptions = {
    * A function which returns true if an error is detected in either the entire json response
    * or the shipment item (convenience).
    */
-  checkForError: (json: any, shipment: any) => boolean;
+  checkForError: (response: any, shipment: any) => boolean;
   getTrackingEvents: (shipment: any) => TrackingEvent[];
   getEstimatedDeliveryTime?: (shipment: any) => number | undefined;
 };
@@ -70,11 +93,7 @@ export type Courier<Code> = {
   name: string;
   code: Code;
   requiredEnvVars?: string[];
-  /**
-   * Makes an API request for the given tracking number
-   * Must return either JS object or XML string
-   */
-  request: (trackingNumber: string) => Promise<any | string>;
+  fetchOptions: FetchOptions;
   parseOptions: ParseOptions;
   tsTrackingNumberCouriers: readonly TrackingCourier[];
 };

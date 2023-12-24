@@ -1,5 +1,11 @@
 import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
-import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
+import {
+  Courier,
+  ParseOptions,
+  FetchOptions,
+  TrackingEvent,
+  TrackingStatus,
+} from '../types';
 import { s10, usps } from 'ts-tracking-number';
 
 // prettier-ignore
@@ -81,26 +87,28 @@ const createRequestXml = (trackingNumber: string): string =>
   <TrackID ID="${trackingNumber}"/>
   </TrackFieldRequest>`;
 
+const fetchOptions: FetchOptions = {
+  devUrl: 'https://secure.shippingapis.com/ShippingAPI.dll',
+  prodUrl: 'https://production.shippingapis.com/ShippingAPI.dll',
+  parameters: {
+    input: (url, trackingNumber) =>
+      `${url}?API=TrackV2&XML=` + createRequestXml(trackingNumber),
+  },
+  responseType: 'XML',
+};
+
 const parseOptions: ParseOptions = {
-  isXML: true,
   shipmentPath: ['TrackResponse', 'TrackInfo'],
-  checkForError: (json, trackInfo) => json.Error || trackInfo.Error,
+  checkForError: (response, trackInfo) => response.Error || trackInfo.Error,
   getTrackingEvents,
   getEstimatedDeliveryTime,
 };
-
-const request = (trackingNumber: string) =>
-  fetch(
-    // production.shippingapis for prod?
-    'https://secure.shippingapis.com/ShippingAPI.dll?API=TrackV2&XML=' +
-      createRequestXml(trackingNumber)
-  ).then((res) => res.text());
 
 const USPS: Courier<'usps'> = {
   name: 'USPS',
   code: 'usps',
   requiredEnvVars: ['USPS_USER_ID'],
-  request,
+  fetchOptions,
   parseOptions,
   tsTrackingNumberCouriers: [s10, usps],
 };

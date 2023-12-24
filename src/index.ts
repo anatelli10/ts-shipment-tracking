@@ -17,7 +17,7 @@ export const track = async (
   assertValidCode(courierCode);
 
   const courier = courierCodeMap[courierCode];
-  const trackingInfo = await trackCourier(courier, trackingNumber);
+  const trackingInfo = await trackCourier(courier, trackingNumber, options);
 
   return trackingInfo;
 };

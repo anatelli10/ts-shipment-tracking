@@ -1,5 +1,11 @@
 import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
-import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
+import {
+  Courier,
+  ParseOptions,
+  FetchOptions,
+  TrackingEvent,
+  TrackingStatus,
+} from '../types';
 import { fedex } from 'ts-tracking-number';
 
 // prettier-ignore
@@ -91,8 +97,23 @@ const createRequestXml = (trackingNumber: string): string =>
   </soapenv:Body>
   </soapenv:Envelope>`;
 
+const fetchOptions: FetchOptions = {
+  devUrl: 'https://wsbeta.fedex.com:443/web-services',
+  prodUrl: 'https://ws.fedex.com:443/web-services',
+  parameters: {
+    input: (url) => url,
+    init: (_, trackingNumber) => ({
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml',
+      },
+      body: createRequestXml(trackingNumber),
+    }),
+  },
+  responseType: 'XML',
+};
+
 const parseOptions: ParseOptions = {
-  isXML: true,
   shipmentPath: [
     'SOAP-ENV:Envelope',
     'SOAP-ENV:Body',
@@ -106,16 +127,6 @@ const parseOptions: ParseOptions = {
   getEstimatedDeliveryTime: (shipment) => shipment.EstimatedDeliveryTimestamp,
 };
 
-const request = (trackingNumber: string) =>
-  // ws.fedex for prod?
-  fetch('https://wsbeta.fedex.com:443/web-services', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'text/xml',
-    },
-    body: createRequestXml(trackingNumber),
-  }).then((res) => res.text());
-
 const FedEx: Courier<'fedex'> = {
   name: 'FedEx',
   code: 'fedex',
@@ -125,7 +136,7 @@ const FedEx: Courier<'fedex'> = {
     'FEDEX_ACCOUNT_NUMBER',
     'FEDEX_METER_NUMBER',
   ],
-  request,
+  fetchOptions,
   parseOptions,
   tsTrackingNumberCouriers: [fedex],
 };

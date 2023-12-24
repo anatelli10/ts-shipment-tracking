@@ -1,7 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
 import { getTracking } from 'ts-tracking-number';
 import * as couriers from './couriers';
-import { Courier, Couriers, TrackingInfo } from './types';
+import { Courier, Couriers, TrackingInfo, TrackingOptions } from './types';
 
 export const XML = new XMLParser({
   parseTagValue: false,
@@ -63,15 +63,29 @@ const path = (paths: (string | number)[], obj: any) => {
   return val;
 };
 
+export const getEnvUrl = ({
+  devUrl,
+  prodUrl,
+  explicitEnv,
+}: {
+  devUrl: string;
+  prodUrl: string;
+  explicitEnv?: TrackingOptions['env'];
+}) => {
+  if (explicitEnv) {
+    return explicitEnv === 'production' ? prodUrl : devUrl;
+  }
+
+  return process.env.NODE_ENV === 'production' ? prodUrl : devUrl;
+};
+
 export const parseTrackInfo = <CourierCode>(
   response: any,
   { name: courierName, parseOptions }: Courier<CourierCode>
 ) => {
-  const json = parseOptions?.isXML ? XML.parse(response) : response;
+  const shipment = path(parseOptions.shipmentPath, response);
 
-  const shipment = path(parseOptions.shipmentPath, json);
-
-  if (shipment == null || parseOptions.checkForError(json, shipment)) {
+  if (shipment == null || parseOptions.checkForError(response, shipment)) {
     throw new Error(`Error retrieving ${courierName} tracking.
 
     Response:
@@ -91,7 +105,8 @@ export const parseTrackInfo = <CourierCode>(
 
 export const trackCourier = async <CourierCode>(
   courier: Courier<CourierCode>,
-  trackingNumber: string
+  trackingNumber: string,
+  options?: TrackingOptions
 ): Promise<TrackingInfo> => {
   courier.requiredEnvVars?.forEach((v) => {
     if (!process.env[v]) {
@@ -101,8 +116,24 @@ export const trackCourier = async <CourierCode>(
     }
   });
 
-  const response = await courier.request(trackingNumber);
-  const trackingInfo = parseTrackInfo(response, courier);
+  const { devUrl, prodUrl, parameters, responseType } = courier.fetchOptions;
+
+  const url = getEnvUrl({
+    devUrl,
+    prodUrl,
+    explicitEnv: options?.env,
+  });
+
+  const response = await fetch(
+    parameters.input(url, trackingNumber),
+    parameters.init?.(url, trackingNumber)
+  );
+  const parsedResponse =
+    responseType === 'XML'
+      ? XML.parse(await response.text())
+      : await response.json();
+
+  const trackingInfo = parseTrackInfo(parsedResponse, courier);
 
   return trackingInfo;
 };
