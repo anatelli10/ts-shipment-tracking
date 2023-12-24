@@ -57,16 +57,26 @@ import {
 } from 'ts-shipment-tracking';
 
 (async () => {
-  const tragnostic: TrackingInfo = await track('<any_tracking_number>');
-  console.log(tragnostic);
+  try {
+    const tragnostic: TrackingInfo = await track('<any_tracking_number>');
+
+    console.log(tragnostic);
+  } catch (err) {
+    console.log(err);
+  }
 
   // or
 
-  const withSpecifiedCourierCode: TrackingInfo = await track(
-    '<ups_tracking_number>',
-    { courierCode: 'ups' }
-  );
-  console.log(withSpecifiedCourierCode);
+  try {
+    const withSpecifiedCourierCode: TrackingInfo = await track(
+      '<ups_tracking_number>',
+      { courierCode: 'ups' }
+    );
+
+    console.log(withSpecifiedCourierCode);
+  } catch (err) {
+    console.log(err);
+  }
 })();
 ```
 
