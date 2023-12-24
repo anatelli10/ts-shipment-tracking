@@ -1,11 +1,9 @@
-import { reverseOneToManyDictionary } from './utils';
+import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
 import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
-// prettier-ignore
-import { add, always, applySpec, complement, either, filter, flatten, ifElse, isEmpty, isNil, join, map, pipe, prop, propOr, props, unless, __ } from 'ramda';
 import { s10, usps } from 'ts-tracking-number';
 
 // prettier-ignore
-const codes = reverseOneToManyDictionary({
+const statusCodes = reverseOneToManyDictionary({
   [TrackingStatus.LABEL_CREATED]: [
     'MA', 'GX',
   ],
@@ -18,69 +16,62 @@ const codes = reverseOneToManyDictionary({
   ],
   [TrackingStatus.RETURNED_TO_SENDER]: [
     '09', '28', '29', '31', 'H8', '04', 'RD', 'RE', '05', '21',
-    '22', '23', '24', '25', '26', '27', 'BA', 'K4', 'K5', 'K6', 'K7', 'RT',
+    '22', '23', '24', '25', '26', '27', 'BA', 'K4', 'K5', 'K6',
+    'K7', 'RT',
   ],
   [TrackingStatus.DELIVERED]: [
     '01', 'I0', 'BR', 'DN', 'AH', 'DL', 'OK', '60', '17',
   ],
 } as const);
 
-const getDate: (event: any) => number = pipe<any, string[], string[], number>(
-  props(['EventDate', 'EventTime']),
-  filter(complement(isEmpty)),
-  ifElse(
-    isEmpty,
-    always(undefined),
-    pipe<string[], string, number>(join(' '), Date.parse)
-  )
-);
+type TrackInfo = DeepPartial<{
+  Event: string;
+  EventCode: keyof typeof statusCodes;
+  EventCity: string;
+  EventState: string;
+  EventCountry: string;
+  EventZIPCode: string;
+  EventDate: string;
+  EventTime: string;
+}>;
 
-const getLocation: (event: any) => string = pipe<
-  any,
-  string[],
-  string[],
-  string
->(
-  props(['EventCity', 'EventState', 'EventCountry', 'EventZIPCode']),
-  filter(complement(either(isNil, isEmpty))),
-  ifElse(isEmpty, always(undefined), join(' '))
-);
+const getTime = ({
+  date,
+  time,
+}: {
+  date: string | undefined;
+  time: string | undefined;
+}): number | undefined =>
+  date && time ? new Date(`${date} ${time}`).getTime() : undefined;
 
-const getStatus: (event: any) => string = pipe<any, string, string>(
-  prop('EventCode'),
-  propOr(TrackingStatus.IN_TRANSIT, __, codes)
-);
+const getTrackingEvent = ({
+  Event,
+  EventCity,
+  EventCode,
+  EventCountry,
+  EventDate,
+  EventState,
+  EventTime,
+  EventZIPCode,
+}: TrackInfo): TrackingEvent => ({
+  status:
+    (EventCode ? statusCodes[EventCode] : TrackingStatus.IN_TRANSIT) ||
+    TrackingStatus.UNAVAILABLE,
+  label: Event,
+  location: getLocation({
+    city: EventCity,
+    state: EventState,
+    country: EventCountry,
+    zip: EventZIPCode,
+  }),
+  time: getTime({ date: EventDate, time: EventTime }),
+});
 
-const getTrackingEvent: (event: any) => TrackingEvent =
-  applySpec<TrackingEvent>({
-    status: getStatus,
-    label: prop('Event'),
-    location: getLocation,
-    time: getDate,
-  });
+const getTrackingEvents = (shipment: any): TrackingEvent[] =>
+  shipment.TrackSummary.TrackDetail.flat().map(getTrackingEvent);
 
-const getTrackingEvents: (trackInfo: any) => TrackingEvent[] = pipe<
-  any,
-  string[],
-  string[],
-  TrackingEvent[]
->(props(['TrackSummary', 'TrackDetail']), flatten, map(getTrackingEvent));
-
-const getEstimatedDeliveryDate: (trackInfo: any) => number = pipe<
-  any,
-  string,
-  number
->(
-  prop('ExpectedDeliveryDate'),
-  unless(
-    isNil,
-    pipe<string, number, number>(
-      Date.parse,
-      // convert 12 AM to 9 PM
-      add((12 + 9) * 60 * 60 * 1000)
-    )
-  )
-);
+const getEstimatedDeliveryTime = (shipment: any): number =>
+  shipment.ExpectedDeliveryDate;
 
 const createRequestXml = (trackingNumber: string): string =>
   `<TrackFieldRequest USERID="${process.env.USPS_USER_ID}">
@@ -92,10 +83,10 @@ const createRequestXml = (trackingNumber: string): string =>
 
 const parseOptions: ParseOptions = {
   isXML: true,
-  shipmentItemPath: ['TrackResponse', 'TrackInfo'],
+  shipmentPath: ['TrackResponse', 'TrackInfo'],
   checkForError: (json, trackInfo) => json.Error || trackInfo.Error,
   getTrackingEvents,
-  getEstimatedDeliveryDate,
+  getEstimatedDeliveryTime,
 };
 
 const request = (trackingNumber: string) =>

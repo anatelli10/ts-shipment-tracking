@@ -48,9 +48,9 @@ export const parseTrackInfo = <CourierCode>(
 ) => {
   const json = parseOptions?.isXML ? XML.parse(response) : response;
 
-  const trackInfo = path(parseOptions.shipmentItemPath, json);
+  const shipment = path(parseOptions.shipmentPath, json);
 
-  if (trackInfo == null || parseOptions.checkForError(json, trackInfo)) {
+  if (shipment == null || parseOptions.checkForError(json, shipment)) {
     throw new Error(`Error retrieving ${courierName} tracking.
 
     Response:
@@ -58,9 +58,9 @@ export const parseTrackInfo = <CourierCode>(
     `);
   }
 
-  const events = parseOptions.getTrackingEvents(trackInfo);
+  const events = parseOptions.getTrackingEvents(shipment);
   const estimatedDeliveryTime =
-    parseOptions.getEstimatedDeliveryDate?.(trackInfo);
+    parseOptions.getEstimatedDeliveryTime?.(shipment);
 
   return {
     events,

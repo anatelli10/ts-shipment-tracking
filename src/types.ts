@@ -54,14 +54,14 @@ export type ParseOptions = {
    *
    * See usages
    */
-  shipmentItemPath: (string | number)[];
+  shipmentPath: (string | number)[];
   /**
    * A function which returns true if an error is detected in either the entire json response
    * or the shipment item (convenience).
    */
   checkForError: (json: any, shipment: any) => boolean;
   getTrackingEvents: (shipment: any) => TrackingEvent[];
-  getEstimatedDeliveryDate?: (shipment: any) => number | undefined;
+  getEstimatedDeliveryTime?: (shipment: any) => number | undefined;
 };
 
 export type Courier<Code> = {

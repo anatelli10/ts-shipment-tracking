@@ -1,11 +1,10 @@
-import { reverseOneToManyDictionary } from './utils';
+import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
 import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
-// prettier-ignore
-import { always, applySpec, complement, either, filter, flatten, ifElse, isEmpty, isNil, join, map, path, pipe, prop, propOr, props, __ } from 'ramda';
+import { path } from 'ramda';
 import { fedex } from 'ts-tracking-number';
 
 // prettier-ignore
-const codes = reverseOneToManyDictionary({
+const statusCodes = reverseOneToManyDictionary({
   [TrackingStatus.LABEL_CREATED]: [
     'PU', 'PX', 'OC',
   ],
@@ -30,43 +29,37 @@ const codes = reverseOneToManyDictionary({
   ],
 } as const);
 
-const getDate: (event: any) => number = pipe<any, string, number>(
-  prop('Timestamp'),
-  ifElse(either(isNil, isEmpty), always(undefined), Date.parse)
-);
+type TrackDetails = DeepPartial<{
+  EventType: keyof typeof statusCodes;
+  EventDescription: string;
+  Address: {
+    City: string;
+    StateOrProvinceCode: string;
+    CountryCode: string;
+    PostalCode: string;
+  };
+  Timestamp: string;
+}>;
 
-const getLocation: (event: any) => string = pipe<
-  any,
-  any,
-  string[],
-  string[],
-  string
->(
-  prop('Address'),
-  props(['City', 'StateOrProvinceCode', 'CountryCode', 'PostalCode']),
-  filter(complement(either(isNil, isEmpty))),
-  ifElse(isEmpty, always(undefined), join(' '))
-);
+const getTrackingEvent = ({
+  Address,
+  EventDescription,
+  EventType,
+  Timestamp,
+}: TrackDetails): TrackingEvent => ({
+  status: EventType ? statusCodes[EventType] : TrackingStatus.UNAVAILABLE,
+  label: EventDescription,
+  location: getLocation({
+    city: Address?.City,
+    state: Address?.StateOrProvinceCode,
+    country: Address?.CountryCode,
+    zip: Address?.PostalCode,
+  }),
+  time: Timestamp ? new Date(Timestamp).getTime() : undefined,
+});
 
-const getStatus: (event: any) => string = pipe<any, string, string>(
-  prop('EventType'),
-  propOr(TrackingStatus.UNAVAILABLE, __, codes)
-);
-
-const getTrackingEvent: (event: any) => TrackingEvent =
-  applySpec<TrackingEvent>({
-    status: getStatus,
-    label: prop('EventDescription'),
-    location: getLocation,
-    time: getDate,
-  });
-
-const getTrackingEvents: (trackDetails: any) => TrackingEvent[] = pipe<
-  any,
-  string[],
-  string[],
-  TrackingEvent[]
->(prop('Events'), flatten, map(getTrackingEvent));
+const getTrackingEvents = (shipment: any): TrackingEvent[] =>
+  shipment.Events.flat().map(getTrackingEvent);
 
 const createRequestXml = (trackingNumber: string): string =>
   `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v9="http://fedex.com/ws/track/v9">
@@ -101,7 +94,7 @@ const createRequestXml = (trackingNumber: string): string =>
 
 const parseOptions: ParseOptions = {
   isXML: true,
-  shipmentItemPath: [
+  shipmentPath: [
     'SOAP-ENV:Envelope',
     'SOAP-ENV:Body',
     'TrackReply',
@@ -111,8 +104,7 @@ const parseOptions: ParseOptions = {
   checkForError: (_, trackDetails) =>
     'ERROR' === path(['Notification', 'Severity'], trackDetails),
   getTrackingEvents,
-  getEstimatedDeliveryDate: (trackDetails) =>
-    trackDetails.EstimatedDeliveryTimestamp,
+  getEstimatedDeliveryTime: (shipment) => shipment.EstimatedDeliveryTimestamp,
 };
 
 const request = (trackingNumber: string) =>

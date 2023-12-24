@@ -1,12 +1,11 @@
-import { reverseOneToManyDictionary } from './utils';
+import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
 import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
-import { getTime, parse as dateParser } from 'date-fns';
-// prettier-ignore
-import { always, apply, applySpec, both, complement, compose, concat, converge, either, equals, filter, ifElse, includes, isEmpty, isNil, join, map, nthArg, path, pathEq, paths, pipe, prop, propOr, props, __ } from 'ramda';
+import * as DateFns from 'date-fns';
+import { path } from 'ramda';
 import { ups } from 'ts-tracking-number';
 
 // prettier-ignore
-const codes = reverseOneToManyDictionary({
+const statusCodes = reverseOneToManyDictionary({
   [TrackingStatus.LABEL_CREATED]: [
     'M', 'P',
   ],
@@ -27,79 +26,101 @@ const codes = reverseOneToManyDictionary({
   ],
 } as const);
 
-const getDate: (date: string, time: string) => number = pipe<any, Date, number>(
-  converge(dateParser, [
-    concat,
-    converge(concat, [
-      ifElse(nthArg(0), always('yyyyMMdd'), always('')),
-      ifElse(nthArg(1), always('Hmmss'), always('')),
-    ]),
-    always(Date.now()),
-  ]),
-  getTime
-);
+type ShipmentPackage = DeepPartial<{
+  status: {
+    description: string;
+    type: string;
+  };
+  location: {
+    address: {
+      city: string;
+      stateProvince: string;
+      countryCode: string;
+      postalCode: string;
+    };
+  };
+  date: string;
+  time: string;
+}>;
 
-const getLocation: (activity: any) => string = pipe<
-  any,
-  any,
-  string[],
-  string[],
-  string
->(
-  path(['location', 'address']),
-  props(['city', 'stateProvince', 'countryCode', 'postalCode']),
-  filter(complement(either(isNil, isEmpty))),
-  ifElse(isEmpty, always(undefined), join(' '))
-);
+const getTime = ({
+  date,
+  time,
+}: {
+  date: string | undefined;
+  time: string | undefined;
+}): number | undefined => {
+  if (!date && !time) {
+    return;
+  }
 
-const getStatus: (activity: any) => string = pipe<any, any, string>(
-  path(['status']),
-  ifElse(
-    both(
-      equals('EXCEPTION'),
-      compose(includes('DELIVERY ATTEMPT'), prop('description'))
-    ),
-    always(TrackingStatus.DELIVERY_ATTEMPTED),
-    pipe<any, string, string>(
-      prop('type'),
-      propOr(TrackingStatus.UNAVAILABLE, __, codes)
-    )
-  )
-);
+  const dateString = `${date ?? ``}${time ?? ``}`;
+  const formatString = `${date ? `yyyyMMdd` : ``}${time ? `Hmmss` : ``}`;
 
-const getTrackingEvent: (activity: any) => TrackingEvent =
-  applySpec<TrackingEvent>({
-    status: getStatus,
-    label: path(['status', 'description']),
-    location: getLocation,
-    time: pipe(props(['date', 'time']), apply(getDate)),
-  });
+  const parsedDate = DateFns.parse(dateString, formatString, new Date());
 
-const getTrackingEvents: (packageDetails: any) => TrackingEvent[] = pipe<
-  any,
-  any,
-  TrackingEvent[]
->(prop('activity'), map(getTrackingEvent));
+  return parsedDate.getTime();
+};
 
-const getEstimatedDeliveryDate: (packageDetails: any) => number = ifElse(
-  pathEq(['deliveryTime', 'type'], 'EDW'),
-  pipe(
-    paths([
-      ['deliveryDate', '0', 'date'],
-      ['deliveryTime', 'endTime'],
-    ]),
-    apply(getDate)
-  ),
-  always(undefined)
-);
+const getStatus = (
+  status: ShipmentPackage['status']
+): TrackingStatus | undefined => {
+  if (!status) {
+    return;
+  }
+
+  const trackingStatus = status.type
+    ? statusCodes[status.type as keyof typeof statusCodes]
+    : undefined;
+
+  if (
+    TrackingStatus.EXCEPTION === trackingStatus &&
+    status.description?.includes('DELIVERY ATTEMPTED')
+  ) {
+    return TrackingStatus.DELIVERY_ATTEMPTED;
+  }
+
+  return trackingStatus;
+};
+
+const getTrackingEvent = ({
+  date,
+  location,
+  status,
+  time,
+}: ShipmentPackage): TrackingEvent => ({
+  status: (status && getStatus(status)) || TrackingStatus.UNAVAILABLE,
+  label: status?.description,
+  location: getLocation({
+    city: location?.address?.city,
+    state: location?.address?.stateProvince,
+    country: location?.address?.countryCode,
+    zip: location?.address?.postalCode,
+  }),
+  time: getTime({ date, time }),
+});
+
+const getTrackingEvents = (shipment: any): TrackingEvent[] =>
+  shipment.activity.map(getTrackingEvent);
+
+const getEstimatedDeliveryTime = (shipment: any): number | undefined => {
+  if ('EDW' !== shipment.deliveryTime?.type) {
+    return;
+  }
+
+  const date = shipment.deliveryDate?.[0]?.date;
+  const time = shipment.deliveryTime?.endTime;
+
+  return getTime({ date, time });
+};
 
 const parseOptions: ParseOptions = {
-  shipmentItemPath: ['trackResponse', 'shipment', '0', 'package', 0],
+  shipmentPath: ['trackResponse', 'shipment', '0', 'package', 0],
   checkForError: (json) =>
     'Tracking Information Not Found' ===
     path(['trackResponse', 'shipment', '0', 'warnings', '0', 'message'], json),
   getTrackingEvents,
-  getEstimatedDeliveryDate,
+  getEstimatedDeliveryTime,
 };
 
 const request = (trackingNumber: string) =>
