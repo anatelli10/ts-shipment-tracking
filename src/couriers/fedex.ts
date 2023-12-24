@@ -1,5 +1,10 @@
 import { reverseOneToManyDictionary } from './utils';
-import { Courier, CourierCodeDictionary, ParseOptions, TrackingEvent } from '../types';
+import {
+  Courier,
+  CourierCodeDictionary,
+  ParseOptions,
+  TrackingEvent,
+} from '../types';
 // prettier-ignore
 import { always, applySpec, complement, either, filter, flatten, ifElse, isEmpty, isNil, join, map, path, pipe, prop, propOr, props, __ } from 'ramda';
 import { fedex } from 'ts-tracking-number';
@@ -116,7 +121,7 @@ const parseOptions: ParseOptions = {
 };
 
 const request = (trackingNumber: string) =>
-  // ws.fedex (without beta) for prod?
+  // ws.fedex for prod?
   fetch('https://wsbeta.fedex.com:443/web-services', {
     method: 'POST',
     headers: {
