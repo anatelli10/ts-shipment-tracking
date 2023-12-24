@@ -1,7 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
 import { getTracking } from 'ts-tracking-number';
 import * as couriers from './couriers';
-import { Courier, Couriers, TrackingInfo, TrackingOptions } from './types';
+import { Courier, Couriers, FetchOptions, TrackingOptions } from './types';
 
 export const XML = new XMLParser({
   parseTagValue: false,
@@ -47,7 +47,7 @@ export function assertValidCode(
 }
 
 // Adapted from Ramda: https://github.com/ramda/ramda/blob/96d601016b562e887e15efd894ec401672f73757/source/paths.js#L23
-const path = (paths: (string | number)[], obj: any) => {
+export const path = (paths: (string | number)[], obj: any) => {
   var val = obj;
   var idx = 0;
   var p;
@@ -64,76 +64,15 @@ const path = (paths: (string | number)[], obj: any) => {
 };
 
 export const getEnvUrl = ({
-  devUrl,
-  prodUrl,
+  urls,
   explicitEnv,
 }: {
-  devUrl: string;
-  prodUrl: string;
+  urls: FetchOptions['urls'];
   explicitEnv?: TrackingOptions['env'];
 }) => {
   if (explicitEnv) {
-    return explicitEnv === 'production' ? prodUrl : devUrl;
+    return explicitEnv === 'production' ? urls.prod : urls.dev;
   }
 
-  return process.env.NODE_ENV === 'production' ? prodUrl : devUrl;
-};
-
-export const parseTrackInfo = <CourierCode>(
-  response: any,
-  { name: courierName, parseOptions }: Courier<CourierCode>
-) => {
-  const shipment = path(parseOptions.shipmentPath, response);
-
-  if (shipment == null || parseOptions.checkForError(response, shipment)) {
-    throw new Error(`Error retrieving ${courierName} tracking.
-
-    Response:
-    ${JSON.stringify(response)}
-    `);
-  }
-
-  const events = parseOptions.getTrackingEvents(shipment);
-  const estimatedDeliveryTime =
-    parseOptions.getEstimatedDeliveryTime?.(shipment);
-
-  return {
-    events,
-    estimatedDeliveryTime,
-  };
-};
-
-export const trackCourier = async <CourierCode>(
-  courier: Courier<CourierCode>,
-  trackingNumber: string,
-  options?: TrackingOptions
-): Promise<TrackingInfo> => {
-  courier.requiredEnvVars?.forEach((v) => {
-    if (!process.env[v]) {
-      throw new Error(
-        `Environment variable "${v}" must be set in order to use ${courier.name} tracking.`
-      );
-    }
-  });
-
-  const { devUrl, prodUrl, parameters, responseType } = courier.fetchOptions;
-
-  const url = getEnvUrl({
-    devUrl,
-    prodUrl,
-    explicitEnv: options?.env,
-  });
-
-  const response = await fetch(
-    parameters.input(url, trackingNumber),
-    parameters.init?.(url, trackingNumber)
-  );
-  const parsedResponse =
-    responseType === 'XML'
-      ? XML.parse(await response.text())
-      : await response.json();
-
-  const trackingInfo = parseTrackInfo(parsedResponse, courier);
-
-  return trackingInfo;
+  return process.env.NODE_ENV === 'production' ? urls.prod : urls.dev;
 };

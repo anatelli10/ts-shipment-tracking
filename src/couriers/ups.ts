@@ -120,8 +120,10 @@ const getEstimatedDeliveryTime = (shipment: any): number | undefined => {
 };
 
 const fetchOptions: FetchOptions = {
-  devUrl: 'https://wwwcie.ups.com/track/v1/details/',
-  prodUrl: 'https://onlinetools.ups.com/track/v1/details/',
+  urls: {
+    dev: 'https://wwwcie.ups.com/track/v1/details/',
+    prod: 'https://onlinetools.ups.com/track/v1/details/',
+  },
   parameters: {
     input: (url, trackingNumber) => url + trackingNumber,
   },

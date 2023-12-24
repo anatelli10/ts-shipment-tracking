@@ -98,8 +98,10 @@ const createRequestXml = (trackingNumber: string): string =>
   </soapenv:Envelope>`;
 
 const fetchOptions: FetchOptions = {
-  devUrl: 'https://wsbeta.fedex.com:443/web-services',
-  prodUrl: 'https://ws.fedex.com:443/web-services',
+  urls: {
+    dev: 'https://wsbeta.fedex.com:443/web-services',
+    prod: 'https://ws.fedex.com:443/web-services',
+  },
   parameters: {
     input: (url) => url,
     init: (_, trackingNumber) => ({

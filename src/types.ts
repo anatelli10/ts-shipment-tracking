@@ -47,8 +47,10 @@ export type TrackingOptions = {
 };
 
 export type FetchOptions = {
-  prodUrl: string;
-  devUrl: string;
+  urls: {
+    dev: string;
+    prod: string;
+  };
   /**
    * Arguments to use for the fetch request built using the URL (determined by environment) and tracking number
    */

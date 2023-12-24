@@ -88,8 +88,10 @@ const createRequestXml = (trackingNumber: string): string =>
   </TrackFieldRequest>`;
 
 const fetchOptions: FetchOptions = {
-  devUrl: 'https://secure.shippingapis.com/ShippingAPI.dll',
-  prodUrl: 'https://production.shippingapis.com/ShippingAPI.dll',
+  urls: {
+    dev: 'https://secure.shippingapis.com/ShippingAPI.dll',
+    prod: 'https://production.shippingapis.com/ShippingAPI.dll',
+  },
   parameters: {
     input: (url, trackingNumber) =>
       `${url}?API=TrackV2&XML=` + createRequestXml(trackingNumber),
