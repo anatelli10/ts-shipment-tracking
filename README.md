@@ -53,18 +53,18 @@ import 'dotenv/config';
 import { TrackingInfo, track, trackByCourier, trackFedex } from 'ts-shipment-tracking';
 
 (async () => {
-  const exampleOne: TrackingInfo | undefined = await track('<any_tracking_number>');
-  console.log(exampleOne);
+  const tragnostic: TrackingInfo = await track('<any_tracking_number>');
+  console.log(tragnostic);
 
   // or
 
-  const exampleTwo: TrackingInfo | undefined = await trackByCourier('ups', '<ups_tracking_number>');
-  console.log(exampleTwo);
+  const withSpecifiedCourierCode: TrackingInfo = await trackByCourier('ups', '<ups_tracking_number>');
+  console.log(withSpecifiedCourierCode);
 
   // or
 
-  const exampleThree: TrackingInfo | undefined = await trackFedex('<fedex_tracking_number>');
-  console.log(exampleThree);
+  const withCourierFunction: TrackingInfo = await trackFedex('<fedex_tracking_number>');
+  console.log(withCourierFunction);
 })();
 ```
 
@@ -84,7 +84,6 @@ Example output:
   estimatedDeliveryDate: 1616996340000
 }
 ```
-⚠️ Currently the output will be `undefined` when the courier api does not have tracking info for the given tracking number or **when any error occurs** (including courier api not responding). Better error handling will be added in the future.
 
 Statuses:
 
@@ -98,12 +97,6 @@ Statuses:
 'EXCEPTION'
 'DELIVERED'
 ```
-
-## Built With
-
-- [TypeScript](https://www.typescriptlang.org/)
-- [Ramda](https://ramdajs.com/)
-- [Node.js](https://nodejs.org/)
 
 ## Acknowledgements
 
