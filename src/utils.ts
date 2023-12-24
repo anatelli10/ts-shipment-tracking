@@ -1,5 +1,4 @@
 import { XMLParser } from 'fast-xml-parser';
-import { path } from 'ramda';
 import { getTracking } from 'ts-tracking-number';
 import * as couriers from './couriers';
 import { Courier, Couriers, TrackingInfo } from './types';
@@ -41,6 +40,23 @@ export function assertValidCode(
       Valid courier codes are ${Object.keys(courierCodeMap)}`
     );
 }
+
+// Adapted from Ramda: https://github.com/ramda/ramda/blob/96d601016b562e887e15efd894ec401672f73757/source/paths.js#L23
+const path = (paths: (string | number)[], obj: any) => {
+  var val = obj;
+  var idx = 0;
+  var p;
+  while (idx < paths.length) {
+    if (val == null) {
+      return;
+    }
+    p = paths[idx];
+
+    val = val[p];
+    idx += 1;
+  }
+  return val;
+};
 
 export const parseTrackInfo = <CourierCode>(
   response: any,

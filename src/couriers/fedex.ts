@@ -1,6 +1,5 @@
 import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
 import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
-import { path } from 'ramda';
 import { fedex } from 'ts-tracking-number';
 
 // prettier-ignore
@@ -102,7 +101,7 @@ const parseOptions: ParseOptions = {
     'TrackDetails',
   ],
   checkForError: (_, trackDetails) =>
-    'ERROR' === path(['Notification', 'Severity'], trackDetails),
+    'ERROR' === trackDetails?.Notification?.Severity,
   getTrackingEvents,
   getEstimatedDeliveryTime: (shipment) => shipment.EstimatedDeliveryTimestamp,
 };

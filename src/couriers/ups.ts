@@ -1,7 +1,6 @@
 import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
 import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
 import * as DateFns from 'date-fns';
-import { path } from 'ramda';
 import { ups } from 'ts-tracking-number';
 
 // prettier-ignore
@@ -118,7 +117,7 @@ const parseOptions: ParseOptions = {
   shipmentPath: ['trackResponse', 'shipment', '0', 'package', 0],
   checkForError: (json) =>
     'Tracking Information Not Found' ===
-    path(['trackResponse', 'shipment', '0', 'warnings', '0', 'message'], json),
+    json.trackResponse?.shipment?.[0]?.warnings?.[0]?.message,
   getTrackingEvents,
   getEstimatedDeliveryTime,
 };
