@@ -1,7 +1,7 @@
 import { reverseOneToManyDictionary } from './utils';
 import {
   Courier,
-  CourierCodeDictionary,
+  TrackingCodeDictionary,
   ParseOptions,
   TrackingEvent,
 } from '../types';
@@ -30,7 +30,7 @@ const codes = reverseOneToManyDictionary({
   DELIVERED: [
     'D',
   ],
-} as const as CourierCodeDictionary);
+} as const as TrackingCodeDictionary);
 
 const getDate: (date: string, time: string) => number = pipe<any, Date, number>(
   converge(dateParser, [
