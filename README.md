@@ -102,7 +102,7 @@ Example output:
 All statuses:
 
 ```typescript
-// src/types.ts
+// types.ts
 export enum TrackingStatus {
   LABEL_CREATED = 'LABEL_CREATED',
   IN_TRANSIT = 'IN_TRANSIT',
@@ -118,6 +118,3 @@ export enum TrackingStatus {
 
 - [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number)
 - [Shipment Tracking](https://github.com/hautelook/shipment-tracking)
-- [date-fns](https://date-fns.org/)
-- [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser)
-- [got](https://github.com/sindresorhus/got)
