@@ -14,6 +14,6 @@ describe('reverseOneToManyDictionary', () => {
       PX: 'LABEL_CREATED',
       OC: 'LABEL_CREATED',
       OD: 'OUT_FOR_DELIVERY',
-    } as const);
+    });
   });
 });
