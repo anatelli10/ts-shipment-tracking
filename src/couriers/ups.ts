@@ -1,13 +1,25 @@
 import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
-import {
-  Courier,
-  ParseOptions,
-  FetchOptions,
-  TrackingEvent,
-  TrackingStatus,
-} from '../types';
+// prettier-ignore
+import { Courier, ParseOptions, FetchOptions, TrackingEvent, TrackingStatus } from '../types';
 import * as DateFns from 'date-fns';
 import { ups } from 'ts-tracking-number';
+
+type ShipmentPackage = DeepPartial<{
+  status: {
+    description: string;
+    type: keyof typeof statusCodes;
+  };
+  location: {
+    address: {
+      city: string;
+      stateProvince: string;
+      countryCode: string;
+      postalCode: string;
+    };
+  };
+  date: string;
+  time: string;
+}>;
 
 // prettier-ignore
 const statusCodes = reverseOneToManyDictionary({
@@ -31,23 +43,6 @@ const statusCodes = reverseOneToManyDictionary({
   ],
 } as const);
 
-type ShipmentPackage = DeepPartial<{
-  status: {
-    description: string;
-    type: string;
-  };
-  location: {
-    address: {
-      city: string;
-      stateProvince: string;
-      countryCode: string;
-      postalCode: string;
-    };
-  };
-  date: string;
-  time: string;
-}>;
-
 const getTime = ({
   date,
   time,
@@ -55,14 +50,15 @@ const getTime = ({
   date: string | undefined;
   time: string | undefined;
 }): number | undefined => {
-  if (!date && !time) {
+  if (!date || !time) {
     return;
   }
 
-  const dateString = `${date ?? ``}${time ?? ``}`;
-  const formatString = `${date ? `yyyyMMdd` : ``}${time ? `Hmmss` : ``}`;
-
-  const parsedDate = DateFns.parse(dateString, formatString, new Date());
+  const parsedDate = DateFns.parse(
+    `${date}${time}`,
+    `${`yyyyMMdd`}${`Hmmss`}`,
+    new Date()
+  );
 
   return parsedDate.getTime();
 };
@@ -74,9 +70,7 @@ const getStatus = (
     return;
   }
 
-  const trackingStatus = status.type
-    ? statusCodes[status.type as keyof typeof statusCodes]
-    : undefined;
+  const trackingStatus = (status.type && statusCodes[status.type]) || undefined;
 
   if (
     TrackingStatus.EXCEPTION === trackingStatus &&
@@ -105,9 +99,6 @@ const getTrackingEvent = ({
   time: getTime({ date, time }),
 });
 
-const getTrackingEvents = (shipment: any): TrackingEvent[] =>
-  shipment.activity.map(getTrackingEvent);
-
 const getEstimatedDeliveryTime = (shipment: any): number | undefined => {
   if ('EDW' !== shipment.deliveryTime?.type) {
     return;
@@ -135,11 +126,11 @@ const parseOptions: ParseOptions = {
   checkForError: (response) =>
     'Tracking Information Not Found' ===
     response.trackResponse?.shipment?.[0]?.warnings?.[0]?.message,
-  getTrackingEvents,
+  getTrackingEvents: (shipment) => shipment.activity.map(getTrackingEvent),
   getEstimatedDeliveryTime,
 };
 
-const UPS: Courier<'ups'> = {
+export const UPS: Courier<'UPS', 'ups'> = {
   name: 'UPS',
   code: 'ups',
   requiredEnvVars: ['UPS_ACCESS_LICENSE_NUMBER'],
@@ -147,5 +138,3 @@ const UPS: Courier<'ups'> = {
   parseOptions,
   tsTrackingNumberCouriers: [ups],
 };
-
-export default UPS;

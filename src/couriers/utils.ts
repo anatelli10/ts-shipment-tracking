@@ -1,5 +1,8 @@
 type OneToManyDictionary = Readonly<Record<string, readonly string[]>>;
 
+// todo:
+// This needs to support throwing TS7053 when using a nonexistent key
+// Currently no type error and type `any` is inferred.
 type ReverseOneToManyDictionary<Dictionary extends OneToManyDictionary> = {
   [StringArrayValue in Dictionary[keyof Dictionary][number]]: {
     [Key in keyof Dictionary]-?: StringArrayValue extends Dictionary[Key][number]

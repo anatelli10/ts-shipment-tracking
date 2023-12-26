@@ -91,8 +91,8 @@ export type ParseOptions = {
   getEstimatedDeliveryTime?: (shipment: any) => number | undefined;
 };
 
-export type Courier<Code> = {
-  name: string;
+export type Courier<Name, Code> = {
+  name: Name;
   code: Code;
   requiredEnvVars?: string[];
   fetchOptions: FetchOptions;

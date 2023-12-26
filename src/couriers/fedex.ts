@@ -1,12 +1,19 @@
 import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
-import {
-  Courier,
-  ParseOptions,
-  FetchOptions,
-  TrackingEvent,
-  TrackingStatus,
-} from '../types';
+// prettier-ignore
+import { Courier, ParseOptions, FetchOptions, TrackingEvent, TrackingStatus } from '../types';
 import { fedex } from 'ts-tracking-number';
+
+type TrackDetails = DeepPartial<{
+  EventType: keyof typeof statusCodes;
+  EventDescription: string;
+  Address: {
+    City: string;
+    StateOrProvinceCode: string;
+    CountryCode: string;
+    PostalCode: string;
+  };
+  Timestamp: string;
+}>;
 
 // prettier-ignore
 const statusCodes = reverseOneToManyDictionary({
@@ -34,18 +41,6 @@ const statusCodes = reverseOneToManyDictionary({
   ],
 } as const);
 
-type TrackDetails = DeepPartial<{
-  EventType: keyof typeof statusCodes;
-  EventDescription: string;
-  Address: {
-    City: string;
-    StateOrProvinceCode: string;
-    CountryCode: string;
-    PostalCode: string;
-  };
-  Timestamp: string;
-}>;
-
 const getTrackingEvent = ({
   Address,
   EventDescription,
@@ -62,9 +57,6 @@ const getTrackingEvent = ({
   }),
   time: Timestamp ? new Date(Timestamp).getTime() : undefined,
 });
-
-const getTrackingEvents = (shipment: any): TrackingEvent[] =>
-  shipment.Events.flat().map(getTrackingEvent);
 
 const createRequestXml = (trackingNumber: string): string =>
   `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v9="http://fedex.com/ws/track/v9">
@@ -125,11 +117,11 @@ const parseOptions: ParseOptions = {
   ],
   checkForError: (_, trackDetails) =>
     'ERROR' === trackDetails?.Notification?.Severity,
-  getTrackingEvents,
+  getTrackingEvents: (shipment) => shipment.Events.flat().map(getTrackingEvent),
   getEstimatedDeliveryTime: (shipment) => shipment.EstimatedDeliveryTimestamp,
 };
 
-const FedEx: Courier<'fedex'> = {
+export const FedEx: Courier<'FedEx', 'fedex'> = {
   name: 'FedEx',
   code: 'fedex',
   requiredEnvVars: [
@@ -142,5 +134,3 @@ const FedEx: Courier<'fedex'> = {
   parseOptions,
   tsTrackingNumberCouriers: [fedex],
 };
-
-export default FedEx;

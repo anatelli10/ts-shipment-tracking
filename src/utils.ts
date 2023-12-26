@@ -1,7 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
 import { getTracking } from 'ts-tracking-number';
 import * as couriers from './couriers';
-import { Courier, Couriers, FetchOptions, TrackingOptions } from './types';
+import { Couriers, FetchOptions, TrackingOptions } from './types';
 
 export const XML = new XMLParser({
   parseTagValue: false,
@@ -11,7 +11,10 @@ export const XML = new XMLParser({
 export const courierCodeMap = Object.values(couriers).reduce(
   (map, courier) => ({ ...map, [courier.code]: courier }),
   // Initialize the map to use USPS tracking for S10 codes
-  { s10: couriers.USPS } as { s10: Courier<typeof couriers.USPS.code> } & {
+  { s10: couriers.USPS } as {
+    // s10: Courier<typeof couriers.USPS.name, typeof couriers.USPS.code>;
+    s10: typeof couriers.USPS;
+  } & {
     // The output type isn't inferenced automatically, manually specify it
     [CourierCode in keyof Couriers as Couriers[CourierCode]['code']]: Couriers[CourierCode];
   }
@@ -39,11 +42,12 @@ export const getCourierCode = (trackingNumber: string) => {
 export function assertValidCode(
   value: string | undefined
 ): asserts value is keyof typeof courierCodeMap {
-  if (value == null || !(value in courierCodeMap))
+  if (value == null || !(value in courierCodeMap)) {
+    // prettier-ignore
     throw new Error(
-      `"${value}" is not a valid courier code.
-      Valid courier codes are ${Object.keys(courierCodeMap)}`
+      `"${value}" is not a valid courier code. Valid courier codes are ${Object.keys(courierCodeMap)}`
     );
+  }
 }
 
 // Adapted from Ramda: https://github.com/ramda/ramda/blob/96d601016b562e887e15efd894ec401672f73757/source/paths.js#L23

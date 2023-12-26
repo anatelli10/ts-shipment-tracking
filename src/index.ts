@@ -1,35 +1,33 @@
 import { Courier, TrackingInfo, TrackingOptions } from './types';
-import {
-  XML,
-  assertValidCode,
-  courierCodeMap,
-  getCourierCode,
-  getEnvUrl,
-  path,
-} from './utils';
+// prettier-ignore
+import { XML, assertValidCode, courierCodeMap, getCourierCode, getEnvUrl, path } from './utils';
 
 export * from './types';
 
-const parseTrackInfo = <CourierCode>(
+const parseTrackInfo = <CourierName, CourierCode>(
   response: any,
-  { name: courierName, parseOptions }: Courier<CourierCode>
+  { name: courierName, parseOptions }: Courier<CourierName, CourierCode>
 ): TrackingInfo => {
   const shipment = path(parseOptions.shipmentPath, response);
 
   if (parseOptions.checkForError(response, shipment)) {
-    throw new Error(`Error found in the following ${courierName} tracking response:
+    // prettier-ignore
+    throw new Error(
+`Error found in the following ${courierName} tracking response:
 
     ${JSON.stringify(response)}
-    `);
+`
+    );
   }
 
   if (shipment == null) {
-    throw new Error(`Shipment not found at path ${
-      parseOptions.shipmentPath
-    } in the following ${courierName} tracking response:
+    // prettier-ignore
+    throw new Error(
+`Shipment not found at path ${parseOptions.shipmentPath} in the following ${courierName} tracking response:
     
     ${JSON.stringify(response)}
-    `);
+`
+    );
   }
 
   const events = parseOptions.getTrackingEvents(shipment);
@@ -42,8 +40,8 @@ const parseTrackInfo = <CourierCode>(
   };
 };
 
-const trackForCourier = async <CourierCode>(
-  courier: Courier<CourierCode>,
+const trackForCourier = async <CourierName, CourierCode>(
+  courier: Courier<CourierName, CourierCode>,
   trackingNumber: string,
   options?: TrackingOptions
 ): Promise<TrackingInfo> => {

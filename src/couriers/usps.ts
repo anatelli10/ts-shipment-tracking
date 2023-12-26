@@ -1,11 +1,6 @@
 import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
-import {
-  Courier,
-  ParseOptions,
-  FetchOptions,
-  TrackingEvent,
-  TrackingStatus,
-} from '../types';
+// prettier-ignore
+import { Courier, ParseOptions, FetchOptions, TrackingEvent, TrackingStatus } from '../types';
 import { s10, usps } from 'ts-tracking-number';
 
 // prettier-ignore
@@ -73,12 +68,6 @@ const getTrackingEvent = ({
   time: getTime({ date: EventDate, time: EventTime }),
 });
 
-const getTrackingEvents = (shipment: any): TrackingEvent[] =>
-  shipment.TrackSummary.TrackDetail.flat().map(getTrackingEvent);
-
-const getEstimatedDeliveryTime = (shipment: any): number =>
-  shipment.ExpectedDeliveryDate;
-
 const createRequestXml = (trackingNumber: string): string =>
   `<TrackFieldRequest USERID="${process.env.USPS_USER_ID}">
   <Revision>1</Revision>
@@ -102,11 +91,12 @@ const fetchOptions: FetchOptions = {
 const parseOptions: ParseOptions = {
   shipmentPath: ['TrackResponse', 'TrackInfo'],
   checkForError: (response, trackInfo) => response.Error || trackInfo.Error,
-  getTrackingEvents,
-  getEstimatedDeliveryTime,
+  getTrackingEvents: (shipment) =>
+    shipment.TrackSummary.TrackDetail.flat().map(getTrackingEvent),
+  getEstimatedDeliveryTime: (shipment) => shipment.ExpectedDeliveryDate,
 };
 
-const USPS: Courier<'usps'> = {
+export const USPS: Courier<'USPS', 'usps'> = {
   name: 'USPS',
   code: 'usps',
   requiredEnvVars: ['USPS_USER_ID'],
@@ -114,5 +104,3 @@ const USPS: Courier<'usps'> = {
   parseOptions,
   tsTrackingNumberCouriers: [s10, usps],
 };
-
-export default USPS;
