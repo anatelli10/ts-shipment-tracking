@@ -47,7 +47,7 @@ USPS_USER_ID=
 
 Example input:
 
-```typescript
+```ts
 import 'dotenv/config';
 import {
   TrackingInfo,
@@ -62,7 +62,7 @@ import {
 
     console.log(tragnostic);
   } catch (err) {
-    console.log(err);
+    console.log((err as Error).message);
   }
 
   // or
@@ -77,14 +77,14 @@ import {
 
     console.log(tracking);
   } catch (err) {
-    console.log(err);
+    console.log((err as Error).message);
   }
 })();
 ```
 
 Example output:
 
-```typescript
+```ts
 {
   events: [
     {
@@ -101,8 +101,7 @@ Example output:
 
 All statuses:
 
-```typescript
-// types.ts
+```ts
 export enum TrackingStatus {
   LABEL_CREATED = 'LABEL_CREATED',
   IN_TRANSIT = 'IN_TRANSIT',
