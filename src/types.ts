@@ -53,7 +53,7 @@ export type FetchOptions = {
   };
   /**
    * Arguments to use for the fetch request.
-   * Built using the URL (determined by environment) and tracking number
+   * Built using the URL (determined by environment) and tracking number.
    */
   parameters: {
     /**
