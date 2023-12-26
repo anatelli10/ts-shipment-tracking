@@ -52,7 +52,8 @@ export type FetchOptions = {
     prod: string;
   };
   /**
-   * Arguments to use for the fetch request built using the URL (determined by environment) and tracking number
+   * Arguments to use for the fetch request.
+   * Built using the URL (determined by environment) and tracking number
    */
   parameters: {
     /**
