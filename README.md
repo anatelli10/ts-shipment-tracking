@@ -49,12 +49,7 @@ Example input:
 
 ```ts
 import 'dotenv/config';
-import {
-  TrackingInfo,
-  track,
-  trackByCourier,
-  trackFedex,
-} from 'ts-shipment-tracking';
+import { TrackingInfo, track, trackByCourier, trackFedex } from 'ts-shipment-tracking';
 
 (async () => {
   try {
