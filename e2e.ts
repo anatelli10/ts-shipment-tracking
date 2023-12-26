@@ -5,7 +5,7 @@ import * as couriers from './src/couriers';
 const { log } = console;
 
 /**
- * Sequentially tests tracking for each courier.
+ * A script that logs the results of sequentially testing tracking for each courier.
  *
  * For each courier, environment variable `TEST_{COURIERNAMEUPPERCASE}_TRACKING_NUMBER`
  * must be set in order to test a respective courier's tracking.
