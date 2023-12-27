@@ -23,7 +23,7 @@ const parseTrackInfo = <CourierName, CourierCode>(
   if (shipment == null) {
     // prettier-ignore
     throw new Error(
-`Shipment not found at path ${parseOptions.shipmentPath} in the following ${courierName} tracking response:
+`Shipment not found at path [${parseOptions.shipmentPath}] in the following ${courierName} tracking response:
     
     ${JSON.stringify(response)}
 `
