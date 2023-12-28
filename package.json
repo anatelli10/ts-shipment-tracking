@@ -10,7 +10,7 @@
     "watch": "tsc -w -p .",
     "clean": "rm -rf dist",
     "test": "npx jest",
-    "e2e": "set -x NODE_NO_WARNINGS 1; nodemon --watch *.* --watch .env e2e.ts"
+    "e2e": "set -x NODE_NO_WARNINGS 1; nodemon --watch . --watch .env e2e.ts"
   },
   "repository": {
     "type": "git",

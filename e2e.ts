@@ -39,13 +39,11 @@ const test = async () => {
         log(`Esimated delivery time: ${new Date(estimatedDeliveryTime)}`);
       }
     } catch (err) {
-      const errorMessage = (err as Error).message;
+      const error = err as Error;
 
-      // prettier-ignore
-      log(
-`Error tracking ${courierName} tracking number ${trackingNumber}:
-      
-    ${errorMessage}`);
+      log(`Error tracking ${courierName} tracking number ${trackingNumber}:`);
+      log();
+      log(`   ${error.stack ? error.stack : error.message}`);
     }
   }
 };

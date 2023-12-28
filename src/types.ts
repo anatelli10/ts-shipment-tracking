@@ -51,45 +51,27 @@ export type FetchOptions = {
     dev: string;
     prod: string;
   };
-  /**
-   * Arguments to use for the fetch request.
-   * Built using the URL (determined by environment) and tracking number.
-   */
-  parameters: {
-    /**
-     * The first argument, typically a url
-     */
-    input: (url: string, trackingNumber: string) => Parameters<typeof fetch>[0];
-    /**
-     * The second argument, typically options
-     */
-    init?: (url: string, trackingNumber: string) => Parameters<typeof fetch>[1];
-  };
-  /**
-   * Should the response be parsed with `res.text()` or `res.json()`?
-   * XML also gets parsed into a JS object
-   */
-  responseType: 'XML' | 'JSON';
+  fetchTracking: (
+    url: string,
+    trackingNumber: string
+  ) => ReturnType<typeof fetch>;
+  parseResponseAsXml?: boolean;
 };
 
 export type ParseOptions = {
   /**
-   * The path to the item in the response which represents the shipment.
-   * e.g. for..
-   *  - FedEx = TrackDetails
-   *  - UPS = shipment[0] so [..., 'shipment', 0]
-   *  - USPS = TrackInfo
-   *
-   * See usages
+   * Retrieves the item which represents the shipment from the tracking response.
    */
-  shipmentPath: (string | number)[];
+  getShipment: (response: any) => any;
   /**
    * A function which returns true if an error is detected in either the entire json response
    * or the shipment item (convenience).
    */
   checkForError: (response: any, shipment: any) => boolean;
   getTrackingEvents: (shipment: any) => TrackingEvent[];
-  getEstimatedDeliveryTime?: (shipment: any) => number | undefined;
+  getEstimatedDeliveryTime?: (
+    shipment: any
+  ) => TrackingInfo['estimatedDeliveryTime'];
 };
 
 export type Courier<Name, Code> = {

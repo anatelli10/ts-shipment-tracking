@@ -1,6 +1,6 @@
 import { Courier, TrackingInfo, TrackingOptions } from './types';
 // prettier-ignore
-import { XML, assertValidCode, courierCodeMap, getCourierCode, getEnvUrl, path } from './utils';
+import { assertValidCode, courierCodeMap, getCourierCode, getEnvUrl, xmlToJs } from './utils';
 
 export * from './types';
 
@@ -8,7 +8,7 @@ const parseTrackInfo = <CourierName, CourierCode>(
   response: any,
   { name: courierName, parseOptions }: Courier<CourierName, CourierCode>
 ): TrackingInfo => {
-  const shipment = path(parseOptions.shipmentPath, response);
+  const shipment = parseOptions.getShipment(response);
 
   if (parseOptions.checkForError(response, shipment)) {
     // prettier-ignore
@@ -23,7 +23,7 @@ const parseTrackInfo = <CourierName, CourierCode>(
   if (shipment == null) {
     // prettier-ignore
     throw new Error(
-`Shipment not found at path [${parseOptions.shipmentPath}] in the following ${courierName} tracking response:
+`"getShipment" function ${parseOptions.getShipment.toString()} could not find the shipment in the following ${courierName} tracking response:
     
     ${JSON.stringify(response)}
 `
@@ -56,25 +56,13 @@ const trackForCourier = async <CourierName, CourierCode>(
     }
   });
 
-  const { urls, parameters, responseType } = courier.fetchOptions;
+  const { fetchTracking, parseResponseAsXml, urls } = courier.fetchOptions;
+  const url = getEnvUrl({ urls, explicitEnv: options?.env });
 
-  /**
-   * Determine whether to use development or production URL
-   */
-  const url = getEnvUrl({
-    urls,
-    explicitEnv: options?.env,
-  });
-
-  const response = await fetch(
-    parameters.input(url, trackingNumber),
-    parameters.init?.(url, trackingNumber)
-  );
-
-  const parsedResponse =
-    responseType === 'XML'
-      ? XML.parse(await response.text())
-      : await response.json();
+  const response = await fetchTracking(url, trackingNumber);
+  const parsedResponse = parseResponseAsXml
+    ? xmlToJs(await response.text())
+    : await response.json();
 
   const trackingInfo = parseTrackInfo(parsedResponse, courier);
 

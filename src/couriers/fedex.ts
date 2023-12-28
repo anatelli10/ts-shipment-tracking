@@ -94,27 +94,21 @@ const fetchOptions: FetchOptions = {
     dev: 'https://wsbeta.fedex.com:443/web-services',
     prod: 'https://ws.fedex.com:443/web-services',
   },
-  parameters: {
-    input: (url) => url,
-    init: (_, trackingNumber) => ({
+  fetchTracking: (url, trackingNumber) =>
+    fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/xml',
       },
       body: createRequestXml(trackingNumber),
     }),
-  },
-  responseType: 'XML',
+  parseResponseAsXml: true,
 };
 
 const parseOptions: ParseOptions = {
-  shipmentPath: [
-    'SOAP-ENV:Envelope',
-    'SOAP-ENV:Body',
-    'TrackReply',
-    'CompletedTrackDetails',
-    'TrackDetails',
-  ],
+  getShipment: (response) =>
+    // prettier-ignore
+    response['SOAP-ENV:Envelope']?.['SOAP-ENV:Body']?.TrackReply?.CompletedTrackDetails?.TrackDetails,
   checkForError: (_, trackDetails) =>
     'ERROR' === trackDetails?.Notification?.Severity,
   getTrackingEvents: (shipment) => shipment.Events.flat().map(getTrackingEvent),

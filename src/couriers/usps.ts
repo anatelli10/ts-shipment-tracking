@@ -81,15 +81,13 @@ const fetchOptions: FetchOptions = {
     dev: 'https://secure.shippingapis.com/ShippingAPI.dll',
     prod: 'https://production.shippingapis.com/ShippingAPI.dll',
   },
-  parameters: {
-    input: (url, trackingNumber) =>
-      `${url}?API=TrackV2&XML=` + createRequestXml(trackingNumber),
-  },
-  responseType: 'XML',
+  fetchTracking: (url, trackingNumber) =>
+    fetch(`${url}?API=TrackV2&XML=` + createRequestXml(trackingNumber)),
+  parseResponseAsXml: true,
 };
 
 const parseOptions: ParseOptions = {
-  shipmentPath: ['TrackResponse', 'TrackInfo'],
+  getShipment: (response) => response.TrackResponse?.TrackInfo,
   checkForError: (response, trackInfo) => response.Error || trackInfo.Error,
   getTrackingEvents: (shipment) =>
     shipment.TrackSummary.TrackDetail.flat().map(getTrackingEvent),

@@ -115,17 +115,16 @@ const fetchOptions: FetchOptions = {
     dev: 'https://wwwcie.ups.com/track/v1/details/',
     prod: 'https://onlinetools.ups.com/track/v1/details/',
   },
-  parameters: {
-    input: (url, trackingNumber) => url + trackingNumber,
-  },
-  responseType: 'JSON',
+  fetchTracking: (url, trackingNumber) => fetch(url + trackingNumber),
 };
 
 const parseOptions: ParseOptions = {
-  shipmentPath: ['trackResponse', 'shipment', '0', 'package', 0],
+  getShipment: (response) =>
+    response.trackResponse?.shipment?.[0]?.package?.[0],
   checkForError: (response) =>
+    response.response?.errors?.[0] ||
     'Tracking Information Not Found' ===
-    response.trackResponse?.shipment?.[0]?.warnings?.[0]?.message,
+      response.trackResponse?.shipment?.[0]?.warnings?.[0]?.message,
   getTrackingEvents: (shipment) => shipment.activity.map(getTrackingEvent),
   getEstimatedDeliveryTime,
 };

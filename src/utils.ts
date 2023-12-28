@@ -3,9 +3,10 @@ import { getTracking } from 'ts-tracking-number';
 import * as couriers from './couriers';
 import { Couriers, FetchOptions, TrackingOptions } from './types';
 
-export const XML = new XMLParser({
+const FastXmlParser = new XMLParser({
   parseTagValue: false,
 });
+export const xmlToJs = FastXmlParser.parse.bind(FastXmlParser);
 
 // A map of courier definitions keyed by their code
 export const courierCodeMap = Object.values(couriers).reduce(
@@ -49,23 +50,6 @@ export function assertValidCode(
     );
   }
 }
-
-// Adapted from Ramda: https://github.com/ramda/ramda/blob/96d601016b562e887e15efd894ec401672f73757/source/paths.js#L23
-export const path = (paths: (string | number)[], obj: any) => {
-  var val = obj;
-  var idx = 0;
-  var p;
-  while (idx < paths.length) {
-    if (val == null) {
-      return;
-    }
-    p = paths[idx];
-
-    val = val[p];
-    idx += 1;
-  }
-  return val;
-};
 
 export const getEnvUrl = ({
   urls,
