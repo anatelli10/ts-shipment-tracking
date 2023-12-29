@@ -12,12 +12,8 @@ export const xmlToJs = FastXmlParser.parse.bind(FastXmlParser);
 export const courierCodeMap = Object.values(couriers).reduce(
   (map, courier) => ({ ...map, [courier.code]: courier }),
   // Initialize the map to use USPS tracking for S10 codes
-  { s10: couriers.USPS } as {
-    // s10: Courier<typeof couriers.USPS.name, typeof couriers.USPS.code>;
-    s10: typeof couriers.USPS;
-  } & {
-    // The output type isn't inferenced automatically, manually specify it
-    [CourierCode in keyof Couriers as Couriers[CourierCode]['code']]: Couriers[CourierCode];
+  { s10: couriers.USPS } as { s10: typeof couriers.USPS } & {
+    [Key in keyof Couriers as Couriers[Key]['code']]: Couriers[Key];
   }
 );
 
