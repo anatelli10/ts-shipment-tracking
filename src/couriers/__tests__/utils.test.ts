@@ -1,4 +1,4 @@
-import * as utils from '../../src/couriers/utils';
+import * as utils from '../utils';
 
 describe('reverseOneToManyDictionary', () => {
   const input = {
