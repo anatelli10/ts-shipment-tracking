@@ -1,6 +1,11 @@
 import { Courier, TrackingInfo, TrackingOptions } from './types';
-// prettier-ignore
-import { assertValidCode, courierCodeMap, getCourierCode, getEnvUrl, xmlToJs } from './utils';
+import {
+  assertValidCode,
+  courierCodeMap,
+  getCourierCode,
+  getEnvUrl,
+  xmlToJs,
+} from './utils';
 
 export * from './types';
 
@@ -11,9 +16,8 @@ const parseTrackInfo = <CourierName, CourierCode>(
   const shipment = parseOptions.getShipment(response);
 
   if (parseOptions.checkForError(response, shipment)) {
-    // prettier-ignore
     throw new Error(
-`Error found in the following ${courierName} tracking response:
+      `Error found in the following ${courierName} tracking response:
 
     ${JSON.stringify(response)}
 `
@@ -21,9 +25,8 @@ const parseTrackInfo = <CourierName, CourierCode>(
   }
 
   if (shipment == null) {
-    // prettier-ignore
     throw new Error(
-`"getShipment" function ${parseOptions.getShipment.toString()} could not find the shipment in the following ${courierName} tracking response:
+      `"getShipment" function ${parseOptions.getShipment.toString()} could not find the shipment in the following ${courierName} tracking response:
     
     ${JSON.stringify(response)}
 `

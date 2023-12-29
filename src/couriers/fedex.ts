@@ -1,6 +1,11 @@
 import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
-// prettier-ignore
-import { Courier, ParseOptions, FetchOptions, TrackingEvent, TrackingStatus } from '../types';
+import {
+  Courier,
+  ParseOptions,
+  FetchOptions,
+  TrackingEvent,
+  TrackingStatus,
+} from '../types';
 import { fedex } from 'ts-tracking-number';
 
 type TrackDetails = DeepPartial<{
@@ -107,8 +112,8 @@ const fetchOptions: FetchOptions = {
 
 const parseOptions: ParseOptions = {
   getShipment: (response) =>
-    // prettier-ignore
-    response['SOAP-ENV:Envelope']?.['SOAP-ENV:Body']?.TrackReply?.CompletedTrackDetails?.TrackDetails,
+    response['SOAP-ENV:Envelope']?.['SOAP-ENV:Body']?.TrackReply
+      ?.CompletedTrackDetails?.TrackDetails,
   checkForError: (_, trackDetails) =>
     'ERROR' === trackDetails?.Notification?.Severity,
   getTrackingEvents: (shipment) => shipment.Events.flat().map(getTrackingEvent),

@@ -1,6 +1,11 @@
 import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
-// prettier-ignore
-import { Courier, ParseOptions, FetchOptions, TrackingEvent, TrackingStatus } from '../types';
+import {
+  Courier,
+  ParseOptions,
+  FetchOptions,
+  TrackingEvent,
+  TrackingStatus,
+} from '../types';
 import { s10, usps } from 'ts-tracking-number';
 
 // prettier-ignore

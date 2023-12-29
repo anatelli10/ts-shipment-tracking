@@ -44,9 +44,10 @@ export function assertValidCode(
   value: string | undefined
 ): asserts value is keyof typeof courierCodeMap {
   if (value == null || !(value in courierCodeMap)) {
-    // prettier-ignore
     throw new Error(
-      `"${value}" is not a valid courier code. Valid courier codes are ${Object.keys(courierCodeMap)}`
+      `"${value}" is not a valid courier code. Valid courier codes are ${Object.keys(
+        courierCodeMap
+      )}`
     );
   }
 }
