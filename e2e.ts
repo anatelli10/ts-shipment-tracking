@@ -12,9 +12,9 @@ const { log } = console;
  * e.g. TEST_FEDEX_TRACKING_NUMBER=000000000000000
  */
 const test = async () => {
-  for await (const [index, courierName] of Object.entries(
-    Object.keys(couriers)
-  )) {
+  const courierKeys = Object.keys(couriers);
+
+  for await (const [index, courierName] of Object.entries(courierKeys)) {
     const envVarName = `TEST_${courierName.toUpperCase()}_TRACKING_NUMBER`;
     const trackingNumber = process.env[envVarName];
 
