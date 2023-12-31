@@ -32,12 +32,15 @@ const test = async () => {
     }
 
     try {
-      const { events, estimatedDeliveryTime } = await track(trackingNumber);
+      const {
+        events: [mostRecentEvent],
+        estimatedDeliveryTime,
+      } = await track(trackingNumber);
 
-      log(events[0]);
+      log(mostRecentEvent);
 
       if (estimatedDeliveryTime) {
-        log(`Esimated delivery time: ${new Date(estimatedDeliveryTime)}`);
+        log(`Estimated delivery time: ${new Date(estimatedDeliveryTime)}`);
       }
     } catch (err) {
       const error = err as Error;
