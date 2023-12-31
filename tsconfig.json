@@ -1,5 +1,6 @@
 {
-  "extends": "@tsconfig/Node18/tsconfig.json",
+  // explicitly include path prefix "./node_modules/" to ensure ts-node works properly
+  "extends": "./node_modules/@tsconfig/Node18/tsconfig.json",
   "compilerOptions": {
     "outDir": "dist"
   },
