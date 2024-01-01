@@ -12,7 +12,6 @@
     <li><a href="#about">About</a></li>
     <li><a href="#installation">Installation</a></li>
     <li><a href="#usage">Usage</a></li>
-    <li><a href="#built-with">Built With</a></li>
     <li><a href="#acknowledgements">Acknowledgements</a></li>
   </ol>
 </details>
@@ -48,68 +47,68 @@ USPS_USER_ID=
 
 Example input:
 
-```typescript
+```ts
 import 'dotenv/config';
-import { TrackingInfo, track, trackByCourier, trackFedex } from 'ts-shipment-tracking';
+import { track, TrackingInfo } from 'ts-shipment-tracking';
 
 (async () => {
-  const exampleOne: TrackingInfo | undefined = await track('<any_tracking_number>');
-  console.log(exampleOne);
+  try {
+    const tragnostic: TrackingInfo = await track('<any_tracking_number>');
+
+    console.log(tragnostic);
+  } catch (err) {
+    console.log((err as Error).message);
+  }
 
   // or
 
-  const exampleTwo: TrackingInfo | undefined = await trackByCourier('ups', '<ups_tracking_number>');
-  console.log(exampleTwo);
+  try {
+    // Bypass the automatic courier detection
+    const tracking: TrackingInfo = await track(
+      '<ups_tracking_number>',
+      // Supports autocomplete!
+      { courierCode: 'ups' }
+    );
 
-  // or
-
-  const exampleThree: TrackingInfo | undefined = await trackFedex('<fedex_tracking_number>');
-  console.log(exampleThree);
+    console.log(tracking);
+  } catch (err) {
+    console.log((err as Error).message);
+  }
 })();
 ```
 
 Example output:
 
-```typescript
+```ts
 {
   events: [
     {
       status: 'IN_TRANSIT',
       label: 'Arrived at FedEx location',
       location: 'LEBANON TN US 37090',
-      date: 1616823540000
+      time: 1616823540000
     },
     ...
   ],
-  estimatedDeliveryDate: 1616996340000
+  estimatedDeliveryTime: 1616996340000
 }
 ```
-⚠️ Currently the output will be `undefined` when the courier api does not have tracking info for the given tracking number or **when any error occurs** (including courier api not responding). Better error handling will be added in the future.
 
-Statuses:
+All statuses:
 
+```ts
+export enum TrackingStatus {
+  LABEL_CREATED = 'LABEL_CREATED',
+  IN_TRANSIT = 'IN_TRANSIT',
+  OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY',
+  DELIVERY_ATTEMPTED = 'DELIVERY_ATTEMPTED',
+  RETURNED_TO_SENDER = 'RETURNED_TO_SENDER',
+  EXCEPTION = 'EXCEPTION',
+  DELIVERED = 'DELIVERED',
+}
 ```
-'UNAVAILABLE'
-'LABEL_CREATED'
-'IN_TRANSIT'
-'OUT_FOR_DELIVERY'
-'DELIVERY_ATTEMPTED'
-'RETURNED_TO_SENDER'
-'EXCEPTION'
-'DELIVERED'
-```
-
-## Built With
-
-- [TypeScript](https://www.typescriptlang.org/)
-- [Ramda](https://ramdajs.com/)
-- [Node.js](https://nodejs.org/)
 
 ## Acknowledgements
 
 - [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number)
 - [Shipment Tracking](https://github.com/hautelook/shipment-tracking)
-- [date-fns](https://date-fns.org/)
-- [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser)
-- [got](https://github.com/sindresorhus/got)
-

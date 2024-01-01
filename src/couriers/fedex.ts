@@ -1,85 +1,67 @@
-import * as codes from '../util/codes.json';
-import got from 'got';
-import { parse as xmlToJson } from 'fast-xml-parser';
-import { TrackingEvent, TrackingInfo } from '../util/types';
+import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
 import {
-  always,
-  applySpec,
-  complement,
-  either,
-  filter,
-  flatten,
-  ifElse,
-  isEmpty,
-  isNil,
-  join,
-  map,
-  partialRight,
-  path,
-  pathEq,
-  pipe,
-  prop,
-  propOr,
-  props,
-  __
-} from 'ramda';
+  Courier,
+  ParseOptions,
+  FetchOptions,
+  TrackingEvent,
+  TrackingStatus,
+} from '../types';
+import { fedex } from 'ts-tracking-number';
 
-const getDate: (event: any) => number = pipe<any, string, number>(
-  prop('Timestamp'),
-  ifElse(either(isNil, isEmpty), always(undefined), Date.parse)
-);
+type TrackDetails = DeepPartial<{
+  EventType: keyof typeof statusCodes;
+  EventDescription: string;
+  Address: {
+    City: string;
+    StateOrProvinceCode: string;
+    CountryCode: string;
+    PostalCode: string;
+  };
+  Timestamp: string;
+}>;
 
-const getLocation: (event: any) => string = pipe<any, any, string[], string[], string>(
-  prop('Address'),
-  props(['City', 'StateOrProvinceCode', 'CountryCode', 'PostalCode']),
-  filter(complement(either(isNil, isEmpty))),
-  ifElse(isEmpty, always(undefined), join(' '))
-);
+// prettier-ignore
+const statusCodes = reverseOneToManyDictionary({
+  [TrackingStatus.LABEL_CREATED]: [
+    'PU', 'PX', 'OC',
+  ],
+  [TrackingStatus.IN_TRANSIT]: [
+    'AA', 'AC', 'AD', 'AF', 'AP', 'AR', 'AX', 'CH', 'DD', 'DP',
+    'DR', 'DS', 'DY', 'EA', 'ED', 'EO', 'EP', 'FD', 'HL', 'IT',
+    'IX', 'LO', 'PF', 'PL', 'PM', 'RR', 'RM', 'RC', 'SF', 'SP',
+    'TR', 'CC', 'CD', 'CP', 'OF', 'OX', 'PD', 'SH', 'CU', 'BR',
+    'TP',
+  ],
+  [TrackingStatus.OUT_FOR_DELIVERY]: [
+    'OD',
+  ],
+  [TrackingStatus.RETURNED_TO_SENDER]: [
+    'RS', 'RP', 'LP', 'RG', 'RD',
+  ],
+  [TrackingStatus.EXCEPTION]: [
+    'CA', 'DE', 'SE',
+  ],
+  [TrackingStatus.DELIVERED]: [
+    'DL',
+  ],
+} as const);
 
-const getStatus: (event: any) => string = pipe<any, string, string>(
-  prop('EventType'),
-  propOr('UNAVAILABLE', __, codes.fedex)
-);
-
-const getTrackingEvent: (event: any) => TrackingEvent = applySpec<TrackingEvent>({
-  status: getStatus,
-  label: prop('EventDescription'),
-  location: getLocation,
-  date: getDate
+const getTrackingEvent = ({
+  Address,
+  EventDescription,
+  EventType,
+  Timestamp,
+}: TrackDetails): TrackingEvent => ({
+  status: (EventType && statusCodes[EventType]) || undefined,
+  label: EventDescription,
+  location: getLocation({
+    city: Address?.City,
+    state: Address?.StateOrProvinceCode,
+    country: Address?.CountryCode,
+    zip: Address?.PostalCode,
+  }),
+  time: Timestamp ? new Date(Timestamp).getTime() : undefined,
 });
-
-const getTrackingEvents: (trackDetails: any) => TrackingEvent[] = pipe<
-  any,
-  string[],
-  string[],
-  TrackingEvent[]
->(prop('Events'), flatten, map(getTrackingEvent));
-
-const parse: (response: any) => TrackingInfo | undefined = pipe<
-  any,
-  any,
-  any,
-  any,
-  TrackingInfo | undefined
->(
-  prop('body'),
-  partialRight(xmlToJson, [{ parseNodeValue: false }, undefined]),
-  path([
-    'SOAP-ENV:Envelope',
-    'SOAP-ENV:Body',
-    'TrackReply',
-    'CompletedTrackDetails',
-    'TrackDetails'
-  ]),
-  ifElse(
-    either(isNil, pathEq(['Notification', 'Severity'], 'ERROR')),
-    always(undefined),
-    applySpec<TrackingInfo>({
-      events: getTrackingEvents,
-      estimatedDeliveryDate: prop('EstimatedDeliveryTimestamp')
-    })
-  )
-);
 
 const createRequestXml = (trackingNumber: string): string =>
   `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v9="http://fedex.com/ws/track/v9">
@@ -112,13 +94,42 @@ const createRequestXml = (trackingNumber: string): string =>
   </soapenv:Body>
   </soapenv:Envelope>`;
 
-export const trackFedex = (trackingNumber: string): Promise<TrackingInfo | undefined> =>
-  got('https://ws.fedex.com:443/web-services', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'text/xml'
-    },
-    body: createRequestXml(trackingNumber)
-  })
-    .then(parse)
-    .catch((e) => undefined);
+const fetchOptions: FetchOptions = {
+  urls: {
+    dev: 'https://wsbeta.fedex.com:443/web-services',
+    prod: 'https://ws.fedex.com:443/web-services',
+  },
+  fetchTracking: (url, trackingNumber) =>
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml',
+      },
+      body: createRequestXml(trackingNumber),
+    }),
+  parseResponseAsXml: true,
+};
+
+const parseOptions: ParseOptions = {
+  getShipment: (response) =>
+    response['SOAP-ENV:Envelope']?.['SOAP-ENV:Body']?.TrackReply
+      ?.CompletedTrackDetails?.TrackDetails,
+  checkForError: (_, trackDetails) =>
+    'ERROR' === trackDetails?.Notification?.Severity,
+  getTrackingEvents: (shipment) => shipment.Events.flat().map(getTrackingEvent),
+  getEstimatedDeliveryTime: (shipment) => shipment.EstimatedDeliveryTimestamp,
+};
+
+export const FedEx: Courier<'FedEx', 'fedex'> = {
+  name: 'FedEx',
+  code: 'fedex',
+  requiredEnvVars: [
+    'FEDEX_KEY',
+    'FEDEX_PASSWORD',
+    'FEDEX_ACCOUNT_NUMBER',
+    'FEDEX_METER_NUMBER',
+  ],
+  fetchOptions,
+  parseOptions,
+  tsTrackingNumberCouriers: [fedex],
+};
