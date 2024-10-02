@@ -1,19 +1,13 @@
-import { XMLParser } from 'fast-xml-parser';
-import { getTracking } from 'ts-tracking-number';
-import * as couriers from './couriers';
-import { Couriers, FetchOptions, TrackingOptions } from './types';
-
-const FastXmlParser = new XMLParser({
-  parseTagValue: false,
-});
-export const xmlToJs = FastXmlParser.parse.bind(FastXmlParser);
+import { getTracking } from "ts-tracking-number";
+import * as couriers from "./couriers";
+import { Couriers, FetchOptions, TrackingOptions } from "./types";
 
 // A map of courier definitions keyed by their code
 export const courierCodeMap = Object.values(couriers).reduce(
   (map, courier) => ({ ...map, [courier.code]: courier }),
   // Initialize the map to use USPS tracking for S10 codes
   { s10: couriers.USPS } as { s10: typeof couriers.USPS } & {
-    [Key in keyof Couriers as Couriers[Key]['code']]: Couriers[Key];
+    [Key in keyof Couriers as Couriers[Key]["code"]]: Couriers[Key];
   }
 );
 
@@ -52,12 +46,12 @@ export const getEnvUrl = ({
   urls,
   explicitEnv,
 }: {
-  urls: FetchOptions['urls'];
-  explicitEnv?: TrackingOptions['env'];
+  urls: FetchOptions["urls"];
+  explicitEnv?: TrackingOptions["env"];
 }) => {
   if (explicitEnv) {
-    return explicitEnv === 'production' ? urls.prod : urls.dev;
+    return explicitEnv === "production" ? urls.prod : urls.dev;
   }
 
-  return process.env.NODE_ENV === 'production' ? urls.prod : urls.dev;
+  return process.env.NODE_ENV === "production" ? urls.prod : urls.dev;
 };
