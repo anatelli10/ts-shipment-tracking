@@ -8,11 +8,15 @@
 
 ## About
 
-Returns a unified response from FedEx, UPS, and USPS tracking APIs.
+Returns a unified response from FedEx, UPS, and USPS tracking APIs. Supports development and production environments.
 
-FedEx API version: Track API 1.0.0 (https://apis.fedex.com/track/v1)
-UPS API version: --
-USPS API version: Package Tracking and Notification 3.2.1 (https://api.usps.com/tracking/v3/tracking)
+### API Versions
+
+_FedEx:_ Track API 1.0.0 (https://apis.fedex.com/track/v1)
+
+_UPS:_ Track API v1 (https://onlinetools.ups.com/api/track/v1)
+
+_USPS:_ Package Tracking and Notification 3.2.1 (https://api.usps.com/tracking/v3/tracking)
 
 ## Installation
 

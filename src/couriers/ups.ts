@@ -1,7 +1,14 @@
-import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
-import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
-import * as DateFns from 'date-fns';
-import { ups } from 'ts-tracking-number';
+import {
+  clientCredentialsTokenRequest,
+  DeepPartial,
+  getLocation,
+  reverseOneToManyDictionary,
+} from "./utils";
+import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from "../types";
+import { parse } from "date-fns";
+import { ups } from "ts-tracking-number";
+import axios from "axios";
+import { randomUUID } from "crypto";
 
 type ShipmentPackage = DeepPartial<{
   status: {
@@ -53,7 +60,7 @@ const getTime = ({
     return;
   }
 
-  const parsedDate = DateFns.parse(
+  const parsedDate = parse(
     `${date}${time}`,
     `${`yyyyMMdd`}${`Hmmss`}`,
     new Date()
@@ -63,7 +70,7 @@ const getTime = ({
 };
 
 const getStatus = (
-  status: ShipmentPackage['status']
+  status: ShipmentPackage["status"]
 ): TrackingStatus | undefined => {
   if (!status) {
     return;
@@ -73,7 +80,7 @@ const getStatus = (
 
   if (
     TrackingStatus.EXCEPTION === trackingStatus &&
-    status.description?.includes('DELIVERY ATTEMPTED')
+    status.description?.includes("DELIVERY ATTEMPTED")
   ) {
     return TrackingStatus.DELIVERY_ATTEMPTED;
   }
@@ -99,7 +106,7 @@ const getTrackingEvent = ({
 });
 
 const getEstimatedDeliveryTime = (shipment: any): number | undefined => {
-  if ('EDW' !== shipment.deliveryTime?.type) {
+  if ("EDW" !== shipment.deliveryTime?.type) {
     return;
   }
 
@@ -114,23 +121,44 @@ const parseOptions: ParseOptions = {
     response.trackResponse?.shipment?.[0]?.package?.[0],
   checkForError: (response) =>
     response.response?.errors?.[0] ||
-    'Tracking Information Not Found' ===
+    "Tracking Information Not Found" ===
       response.trackResponse?.shipment?.[0]?.warnings?.[0]?.message,
   getTrackingEvents: (shipment) => shipment.activity.map(getTrackingEvent),
   getEstimatedDeliveryTime,
 };
 
-const fetchTracking = (url: string, trackingNumber: string) =>
-  fetch(url + trackingNumber);
+const fetchTracking = async (baseURL: string, trackingNumber: string) => {
+  const token = await clientCredentialsTokenRequest({
+    url: `${baseURL}/security/v1/oauth/token`,
 
-export const UPS: Courier<'UPS', 'ups'> = {
-  name: 'UPS',
-  code: 'ups',
-  requiredEnvVars: ['UPS_ACCESS_LICENSE_NUMBER'],
+    client_id: process.env.UPS_CLIENT_ID!,
+    client_secret: process.env.UPS_CLIENT_SECRET!,
+    useAuthorizationHeader: true,
+  });
+
+  const { data } = await axios(
+    `${baseURL}/api/track/v1/details/${trackingNumber}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+
+        transId: randomUUID(),
+        transactionSrc: "ts-shipment-tracking",
+      },
+    }
+  );
+
+  return data;
+};
+
+export const UPS: Courier<"UPS", "ups"> = {
+  name: "UPS",
+  code: "ups",
+  requiredEnvVars: ["UPS_CLIENT_ID", "UPS_CLIENT_SECRET"],
   fetchOptions: {
     urls: {
-      dev: 'https://wwwcie.ups.com/track/v1/details/',
-      prod: 'https://onlinetools.ups.com/track/v1/details/',
+      dev: "https://wwwcie.ups.com",
+      prod: "https://onlinetools.ups.com",
     },
     fetchTracking,
   },

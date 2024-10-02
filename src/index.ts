@@ -1,13 +1,12 @@
-import { Courier, TrackingInfo, TrackingOptions } from './types';
+import { Courier, TrackingInfo, TrackingOptions } from "./types";
 import {
   assertValidCode,
   courierCodeMap,
   getCourierCode,
   getEnvUrl,
-  xmlToJs,
-} from './utils';
+} from "./utils";
 
-export * from './types';
+export * from "./types";
 
 const parseTrackInfo = <CourierName, CourierCode>(
   response: any,
@@ -63,11 +62,8 @@ const trackForCourier = async <CourierName, CourierCode>(
   const url = getEnvUrl({ urls, explicitEnv: options?.env });
 
   const response = await fetchTracking(url, trackingNumber);
-  const parsedResponse = parseResponseAsXml
-    ? xmlToJs(await response.text())
-    : response;
 
-  const trackingInfo = parseTrackInfo(parsedResponse, courier);
+  const trackingInfo = parseTrackInfo(response, courier);
 
   return trackingInfo;
 };
