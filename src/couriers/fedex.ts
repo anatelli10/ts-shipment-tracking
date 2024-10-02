@@ -1,11 +1,5 @@
 import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
-import {
-  Courier,
-  ParseOptions,
-  FetchOptions,
-  TrackingEvent,
-  TrackingStatus,
-} from '../types';
+import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
 import { fedex } from 'ts-tracking-number';
 
 type TrackDetails = DeepPartial<{
@@ -63,6 +57,16 @@ const getTrackingEvent = ({
   time: Timestamp ? new Date(Timestamp).getTime() : undefined,
 });
 
+const parseOptions: ParseOptions = {
+  getShipment: (response) =>
+    response['SOAP-ENV:Envelope']?.['SOAP-ENV:Body']?.TrackReply
+      ?.CompletedTrackDetails?.TrackDetails,
+  checkForError: (_, trackDetails) =>
+    'ERROR' === trackDetails?.Notification?.Severity,
+  getTrackingEvents: (shipment) => shipment.Events.flat().map(getTrackingEvent),
+  getEstimatedDeliveryTime: (shipment) => shipment.EstimatedDeliveryTimestamp,
+};
+
 const createRequestXml = (trackingNumber: string): string =>
   `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v9="http://fedex.com/ws/track/v9">
   <soapenv:Body>
@@ -94,31 +98,14 @@ const createRequestXml = (trackingNumber: string): string =>
   </soapenv:Body>
   </soapenv:Envelope>`;
 
-const fetchOptions: FetchOptions = {
-  urls: {
-    dev: 'https://wsbeta.fedex.com:443/web-services',
-    prod: 'https://ws.fedex.com:443/web-services',
-  },
-  fetchTracking: (url, trackingNumber) =>
-    fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/xml',
-      },
-      body: createRequestXml(trackingNumber),
-    }),
-  parseResponseAsXml: true,
-};
-
-const parseOptions: ParseOptions = {
-  getShipment: (response) =>
-    response['SOAP-ENV:Envelope']?.['SOAP-ENV:Body']?.TrackReply
-      ?.CompletedTrackDetails?.TrackDetails,
-  checkForError: (_, trackDetails) =>
-    'ERROR' === trackDetails?.Notification?.Severity,
-  getTrackingEvents: (shipment) => shipment.Events.flat().map(getTrackingEvent),
-  getEstimatedDeliveryTime: (shipment) => shipment.EstimatedDeliveryTimestamp,
-};
+const fetchTracking = (url: string, trackingNumber: string) =>
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/xml',
+    },
+    body: createRequestXml(trackingNumber),
+  });
 
 export const FedEx: Courier<'FedEx', 'fedex'> = {
   name: 'FedEx',
@@ -129,7 +116,14 @@ export const FedEx: Courier<'FedEx', 'fedex'> = {
     'FEDEX_ACCOUNT_NUMBER',
     'FEDEX_METER_NUMBER',
   ],
-  fetchOptions,
+  fetchOptions: {
+    urls: {
+      dev: 'https://wsbeta.fedex.com:443/web-services',
+      prod: 'https://ws.fedex.com:443/web-services',
+    },
+    parseResponseAsXml: true,
+    fetchTracking,
+  },
   parseOptions,
   tsTrackingNumberCouriers: [fedex],
 };

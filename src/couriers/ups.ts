@@ -1,11 +1,5 @@
 import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
-import {
-  Courier,
-  ParseOptions,
-  FetchOptions,
-  TrackingEvent,
-  TrackingStatus,
-} from '../types';
+import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
 import * as DateFns from 'date-fns';
 import { ups } from 'ts-tracking-number';
 
@@ -115,14 +109,6 @@ const getEstimatedDeliveryTime = (shipment: any): number | undefined => {
   return getTime({ date, time });
 };
 
-const fetchOptions: FetchOptions = {
-  urls: {
-    dev: 'https://wwwcie.ups.com/track/v1/details/',
-    prod: 'https://onlinetools.ups.com/track/v1/details/',
-  },
-  fetchTracking: (url, trackingNumber) => fetch(url + trackingNumber),
-};
-
 const parseOptions: ParseOptions = {
   getShipment: (response) =>
     response.trackResponse?.shipment?.[0]?.package?.[0],
@@ -134,11 +120,20 @@ const parseOptions: ParseOptions = {
   getEstimatedDeliveryTime,
 };
 
+const fetchTracking = (url: string, trackingNumber: string) =>
+  fetch(url + trackingNumber);
+
 export const UPS: Courier<'UPS', 'ups'> = {
   name: 'UPS',
   code: 'ups',
   requiredEnvVars: ['UPS_ACCESS_LICENSE_NUMBER'],
-  fetchOptions,
+  fetchOptions: {
+    urls: {
+      dev: 'https://wwwcie.ups.com/track/v1/details/',
+      prod: 'https://onlinetools.ups.com/track/v1/details/',
+    },
+    fetchTracking,
+  },
   parseOptions,
   tsTrackingNumberCouriers: [ups],
 };
