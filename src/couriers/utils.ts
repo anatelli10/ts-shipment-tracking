@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 /**
  * Reverses a Record<string, string[]> such that every value's array member becomes a key pointing to its respective key in the input.
  * e.g. { animal: ['cat','dog','elephant'] } becomes { cat: 'animal', dog: 'animal', elephant: 'animal' }
@@ -54,4 +56,42 @@ export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends Array<infer I>
     ? Array<DeepPartial<I>>
     : DeepPartial<T[P]>;
+};
+
+export const clientCredentialsTokenRequest = async ({
+  url,
+  client_id,
+  client_secret,
+  scope,
+}: Record<'url' | 'client_id' | 'client_secret' | 'scope', string>) => {
+  type OAuthTokenResponse = {
+    access_token: string;
+    token_type: string;
+    issued_at: number;
+    expires_in: number;
+    status: string;
+    scope: string;
+    issuer: string;
+    client_id: string;
+    application_name: string;
+    api_products: string;
+    public_key: string;
+  };
+
+  const {
+    data: { access_token },
+  } = await axios<OAuthTokenResponse>(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    data: new URLSearchParams({
+      client_id,
+      client_secret,
+      grant_type: 'client_credentials',
+      scope,
+    }),
+  });
+
+  return access_token;
 };

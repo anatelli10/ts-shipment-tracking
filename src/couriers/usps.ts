@@ -1,7 +1,11 @@
-import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
+import {
+  clientCredentialsTokenRequest,
+  DeepPartial,
+  getLocation,
+  reverseOneToManyDictionary,
+} from './utils';
 import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
 import { s10, usps } from 'ts-tracking-number';
-import axios from 'axios';
 
 // prettier-ignore
 const statusCodes = reverseOneToManyDictionary({
@@ -67,39 +71,17 @@ const parseOptions: ParseOptions = {
 };
 
 const fetchTracking = async (baseURL: string, trackingNumber: string) => {
-  type TokenResponse = {
-    access_token: string;
-    token_type: string;
-    issued_at: number;
-    expires_in: number;
-    status: string;
-    scope: string;
-    issuer: string;
-    client_id: string;
-    application_name: string;
-    api_products: string;
-    public_key: string;
-  };
-
-  const {
-    data: { access_token },
-  } = await axios<TokenResponse>(`${baseURL}/oauth2/v3/token`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    data: new URLSearchParams({
-      client_id: process.env.USPS_DEV_CLIENT_ID!,
-      client_secret: process.env.USPS_DEV_CLIENT_SECRET!,
-      grant_type: 'client_credentials',
-      scope: 'tracking',
-    }),
+  const token = await clientCredentialsTokenRequest({
+    url: `${baseURL}/oauth2/v3/token`,
+    client_id: process.env.USPS_DEV_CLIENT_ID!,
+    client_secret: process.env.USPS_DEV_CLIENT_SECRET!,
+    scope: 'tracking',
   });
 
   return fetch(
     `${baseURL}/tracking/v3/tracking/${trackingNumber}?expand=DETAIL`,
     {
-      headers: { Authorization: `Bearer ${access_token}` },
+      headers: { Authorization: `Bearer ${token}` },
     }
   );
 };
