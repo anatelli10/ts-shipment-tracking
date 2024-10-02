@@ -1,6 +1,6 @@
-import 'dotenv/config';
-import { track } from './src';
-import * as couriers from './src/couriers';
+import "dotenv/config";
+import { track } from "./src";
+import * as couriers from "./src/couriers";
 
 const { log } = console;
 
@@ -19,7 +19,7 @@ const test = async () => {
     const trackingNumber = process.env[envVarName];
 
     if (Number(index) > 0) {
-      log('---');
+      log("---");
     }
 
     log(`${courierName}:`);
