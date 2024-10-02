@@ -76,11 +76,18 @@ const parseOptions: ParseOptions = {
 };
 
 const fetchTracking = async (baseURL: string, trackingNumber: string) => {
+  // Lazy, in the future it would be nice to make OAuth/Environments more configurable
+  const isDevEnv = baseURL.startsWith("https://api-cat");
+
   const token = await clientCredentialsTokenRequest({
     url: `${baseURL}/oauth2/v3/token`,
 
-    client_id: process.env.USPS_DEV_CLIENT_ID!,
-    client_secret: process.env.USPS_DEV_CLIENT_SECRET!,
+    client_id: isDevEnv
+      ? process.env.USPS_DEV_CLIENT_ID!
+      : process.env.USPS_PROD_CLIENT_ID!,
+    client_secret: isDevEnv
+      ? process.env.USPS_DEV_CLIENT_SECRET!
+      : process.env.USPS_PROD_CLIENT_SECRET!,
     scope: "tracking",
   });
 
