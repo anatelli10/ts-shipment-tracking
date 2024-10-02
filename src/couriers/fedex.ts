@@ -1,17 +1,23 @@
-import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
-import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
-import { fedex } from 'ts-tracking-number';
+import {
+  clientCredentialsTokenRequest,
+  DeepPartial,
+  getLocation,
+  reverseOneToManyDictionary,
+} from "./utils";
+import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from "../types";
+import { fedex } from "ts-tracking-number";
+import axios from "axios";
 
 type TrackDetails = DeepPartial<{
-  EventType: keyof typeof statusCodes;
-  EventDescription: string;
-  Address: {
-    City: string;
-    StateOrProvinceCode: string;
-    CountryCode: string;
-    PostalCode: string;
+  eventType: keyof typeof statusCodes;
+  eventDescription: string;
+  scanLocation: {
+    city: string;
+    stateOrProvinceCode: string;
+    countryCode: string;
+    postalCode: string;
   };
-  Timestamp: string;
+  date: string;
 }>;
 
 // prettier-ignore
@@ -36,92 +42,76 @@ const statusCodes = reverseOneToManyDictionary({
     'CA', 'DE', 'SE',
   ],
   [TrackingStatus.DELIVERED]: [
-    'DL',
+    'DL', 'HP',
   ],
 } as const);
 
 const getTrackingEvent = ({
-  Address,
-  EventDescription,
-  EventType,
-  Timestamp,
+  scanLocation,
+  eventDescription,
+  eventType,
+  date,
 }: TrackDetails): TrackingEvent => ({
-  status: (EventType && statusCodes[EventType]) || undefined,
-  label: EventDescription,
+  status: (eventType && statusCodes[eventType]) || undefined,
+  label: eventDescription,
   location: getLocation({
-    city: Address?.City,
-    state: Address?.StateOrProvinceCode,
-    country: Address?.CountryCode,
-    zip: Address?.PostalCode,
+    city: scanLocation?.city,
+    state: scanLocation?.stateOrProvinceCode,
+    country: scanLocation?.countryCode,
+    zip: scanLocation?.postalCode,
   }),
-  time: Timestamp ? new Date(Timestamp).getTime() : undefined,
+  time: date ? Date.parse(date) : undefined,
 });
 
 const parseOptions: ParseOptions = {
   getShipment: (response) =>
-    response['SOAP-ENV:Envelope']?.['SOAP-ENV:Body']?.TrackReply
-      ?.CompletedTrackDetails?.TrackDetails,
-  checkForError: (_, trackDetails) =>
-    'ERROR' === trackDetails?.Notification?.Severity,
-  getTrackingEvents: (shipment) => shipment.Events.flat().map(getTrackingEvent),
-  getEstimatedDeliveryTime: (shipment) => shipment.EstimatedDeliveryTimestamp,
+    response.output.completeTrackResults[0].trackResults[0],
+  checkForError: (response) => response.errors,
+  getTrackingEvents: (shipment) => shipment.scanEvents.map(getTrackingEvent),
+  getEstimatedDeliveryTime: (shipment) => {
+    // The estimated window for time of delivery. May be periodically updated based on available in-flight shipment information.
+    if (shipment.estimatedDeliveryTimeWindow.type === "ESTIMATED_DELIVERY") {
+      return Date.parse(shipment.estimatedDeliveryTimeWindow.window.begins);
+    }
+
+    // The standard committed window of time by which the package is expected to be delivered.
+    if (shipment.standardTransitTimeWindow.type === "ESTIMATED_DELIVERY") {
+      return Date.parse(shipment.standardTransitTimeWindow.window.begins);
+    }
+  },
 };
 
-const createRequestXml = (trackingNumber: string): string =>
-  `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v9="http://fedex.com/ws/track/v9">
-  <soapenv:Body>
-  <TrackRequest xmlns="http://fedex.com/ws/track/v9">
-  <WebAuthenticationDetail>
-  <UserCredential>
-  <Key>${process.env.FEDEX_KEY}</Key>
-  <Password>${process.env.FEDEX_PASSWORD}</Password>
-  </UserCredential>
-  </WebAuthenticationDetail>
-  <ClientDetail>
-  <AccountNumber>${process.env.FEDEX_ACCOUNT_NUMBER}</AccountNumber>
-  <MeterNumber>${process.env.FEDEX_METER_NUMBER}</MeterNumber>
-  </ClientDetail>
-  <Version>
-  <ServiceId>trck</ServiceId>
-  <Major>9</Major>
-  <Intermediate>1</Intermediate>
-  <Minor>0</Minor>
-  </Version>
-  <SelectionDetails>
-  <PackageIdentifier>
-  <Type>TRACKING_NUMBER_OR_DOORTAG</Type>
-  <Value>${trackingNumber}</Value>
-  </PackageIdentifier>
-  </SelectionDetails>
-  <ProcessingOptions>INCLUDE_DETAILED_SCANS</ProcessingOptions>
-  </TrackRequest>
-  </soapenv:Body>
-  </soapenv:Envelope>`;
-
-const fetchTracking = (url: string, trackingNumber: string) =>
-  fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'text/xml',
-    },
-    body: createRequestXml(trackingNumber),
+const fetchTracking = async (baseURL: string, trackingNumber: string) => {
+  const token = await clientCredentialsTokenRequest({
+    url: `${baseURL}/oauth/token`,
+    client_id: process.env.FEDEX_CLIENT_ID!,
+    client_secret: process.env.FEDEX_CLIENT_SECRET!,
   });
 
-export const FedEx: Courier<'FedEx', 'fedex'> = {
-  name: 'FedEx',
-  code: 'fedex',
-  requiredEnvVars: [
-    'FEDEX_KEY',
-    'FEDEX_PASSWORD',
-    'FEDEX_ACCOUNT_NUMBER',
-    'FEDEX_METER_NUMBER',
-  ],
+  const { data } = await axios(`${baseURL}/track/v1/trackingnumbers`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    data: JSON.stringify({
+      includeDetailedScans: true,
+      trackingInfo: [{ trackingNumberInfo: { trackingNumber } }],
+    }),
+  });
+
+  return data;
+};
+
+export const FedEx: Courier<"FedEx", "fedex"> = {
+  name: "FedEx",
+  code: "fedex",
+  requiredEnvVars: ["FEDEX_CLIENT_ID", "FEDEX_CLIENT_SECRET"],
   fetchOptions: {
     urls: {
-      dev: 'https://wsbeta.fedex.com:443/web-services',
-      prod: 'https://ws.fedex.com:443/web-services',
+      dev: "https://apis-sandbox.fedex.com",
+      prod: "https://apis.fedex.com",
     },
-    parseResponseAsXml: true,
     fetchTracking,
   },
   parseOptions,

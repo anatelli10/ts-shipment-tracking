@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 
 /**
  * Reverses a Record<string, string[]> such that every value's array member becomes a key pointing to its respective key in the input.
@@ -49,7 +49,7 @@ export const getLocation = ({
   state?: string;
   country?: string;
   zip?: string;
-}) => [city, state, country, zip].filter(Boolean).join(' ') || undefined;
+}) => [city, state, country, zip].filter(Boolean).join(" ") || undefined;
 
 // source: https://github.com/joonhocho/tsdef/blob/4f0a9f07c5ac704604afeb64f52de3fc7709989c/src/index.ts#L222C1-L226C3
 export type DeepPartial<T> = {
@@ -63,7 +63,12 @@ export const clientCredentialsTokenRequest = async ({
   client_id,
   client_secret,
   scope,
-}: Record<'url' | 'client_id' | 'client_secret' | 'scope', string>) => {
+}: {
+  url: string;
+  client_id: string;
+  client_secret: string;
+  scope?: string;
+}) => {
   type OAuthTokenResponse = {
     access_token: string;
     token_type: string;
@@ -81,15 +86,15 @@ export const clientCredentialsTokenRequest = async ({
   const {
     data: { access_token },
   } = await axios<OAuthTokenResponse>(url, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
+      "Content-Type": "application/x-www-form-urlencoded",
     },
     data: new URLSearchParams({
       client_id,
       client_secret,
-      grant_type: 'client_credentials',
-      scope,
+      grant_type: "client_credentials",
+      ...(scope && { scope }),
     }),
   });
 

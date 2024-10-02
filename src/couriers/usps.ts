@@ -3,9 +3,10 @@ import {
   DeepPartial,
   getLocation,
   reverseOneToManyDictionary,
-} from './utils';
-import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
-import { s10, usps } from 'ts-tracking-number';
+} from "./utils";
+import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from "../types";
+import { s10, usps } from "ts-tracking-number";
+import axios from "axios";
 
 // prettier-ignore
 const statusCodes = reverseOneToManyDictionary({
@@ -59,7 +60,7 @@ const getTrackingEvent = ({
     country: eventCountry,
     zip: eventZIP,
   }),
-  time: Date.parse(GMTTimestamp!) || undefined,
+  time: GMTTimestamp ? Date.parse(GMTTimestamp) : undefined,
 });
 
 const parseOptions: ParseOptions = {
@@ -67,7 +68,8 @@ const parseOptions: ParseOptions = {
   checkForError: (response) => response.error,
   getTrackingEvents: (shipment) =>
     shipment.eventSummaries.map(getTrackingEvent),
-  getEstimatedDeliveryTime: (shipment) => shipment.expectedDeliveryTimeStamp,
+  getEstimatedDeliveryTime: (shipment) =>
+    Date.parse(shipment.expectedDeliveryTimeStamp),
 };
 
 const fetchTracking = async (baseURL: string, trackingNumber: string) => {
@@ -75,30 +77,32 @@ const fetchTracking = async (baseURL: string, trackingNumber: string) => {
     url: `${baseURL}/oauth2/v3/token`,
     client_id: process.env.USPS_DEV_CLIENT_ID!,
     client_secret: process.env.USPS_DEV_CLIENT_SECRET!,
-    scope: 'tracking',
+    scope: "tracking",
   });
 
-  return fetch(
+  const { data } = await axios(
     `${baseURL}/tracking/v3/tracking/${trackingNumber}?expand=DETAIL`,
     {
       headers: { Authorization: `Bearer ${token}` },
     }
   );
+
+  return data;
 };
 
-export const USPS: Courier<'USPS', 'usps'> = {
-  name: 'USPS',
-  code: 'usps',
+export const USPS: Courier<"USPS", "usps"> = {
+  name: "USPS",
+  code: "usps",
   requiredEnvVars: [
-    'USPS_DEV_CLIENT_ID',
-    'USPS_DEV_CLIENT_SECRET',
-    'USPS_PROD_CLIENT_ID',
-    'USPS_PROD_CLIENT_SECRET',
+    "USPS_DEV_CLIENT_ID",
+    "USPS_DEV_CLIENT_SECRET",
+    "USPS_PROD_CLIENT_ID",
+    "USPS_PROD_CLIENT_SECRET",
   ],
   fetchOptions: {
     urls: {
-      dev: 'https://api-cat.usps.com',
-      prod: 'https://api.usps.com',
+      dev: "https://api-cat.usps.com",
+      prod: "https://api.usps.com",
     },
     fetchTracking,
   },

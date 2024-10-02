@@ -10,10 +10,9 @@
 
 Returns a unified response from FedEx, UPS, and USPS tracking APIs.
 
-
-FedEx API version: --
+FedEx API version: Track API 1.0.0 (https://apis.fedex.com/track/v1)
 UPS API version: --
-USPS API version: Tracking 3.0 (https://api.usps.com/tracking/v3/tracking)
+USPS API version: Package Tracking and Notification 3.2.1 (https://api.usps.com/tracking/v3/tracking)
 
 ## Installation
 
@@ -34,26 +33,25 @@ Copy the contents of [.env.template](.env.template) into your `.env` file and fi
 Example input:
 
 ```ts
-import 'dotenv/config';
-import { track, TrackingInfo } from 'ts-shipment-tracking';
+import "dotenv/config";
+import { track, TrackingInfo } from "ts-shipment-tracking";
 
 (async () => {
   // With automatic courier detection
   try {
-    const tragnostic: TrackingInfo = await track('<any_tracking_number>');
+    const tragnostic: TrackingInfo = await track("<any_tracking_number>");
 
     console.log(tragnostic);
   } catch (err) {
     console.log((err as Error).message);
   }
 
-
   // With explicitly specified courier
   try {
     const tracking: TrackingInfo = await track(
-      '<ups_tracking_number>',
+      "<ups_tracking_number>",
       // Supports autocomplete!
-      { courierCode: 'ups' }
+      { courierCode: "ups" }
     );
 
     console.log(tracking);
@@ -84,13 +82,13 @@ All statuses:
 
 ```ts
 export enum TrackingStatus {
-  LABEL_CREATED = 'LABEL_CREATED',
-  IN_TRANSIT = 'IN_TRANSIT',
-  OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY',
-  DELIVERY_ATTEMPTED = 'DELIVERY_ATTEMPTED',
-  RETURNED_TO_SENDER = 'RETURNED_TO_SENDER',
-  EXCEPTION = 'EXCEPTION',
-  DELIVERED = 'DELIVERED',
+  LABEL_CREATED = "LABEL_CREATED",
+  IN_TRANSIT = "IN_TRANSIT",
+  OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
+  DELIVERY_ATTEMPTED = "DELIVERY_ATTEMPTED",
+  RETURNED_TO_SENDER = "RETURNED_TO_SENDER",
+  EXCEPTION = "EXCEPTION",
+  DELIVERED = "DELIVERED",
 }
 ```
 

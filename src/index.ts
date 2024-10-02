@@ -65,7 +65,7 @@ const trackForCourier = async <CourierName, CourierCode>(
   const response = await fetchTracking(url, trackingNumber);
   const parsedResponse = parseResponseAsXml
     ? xmlToJs(await response.text())
-    : await response.json();
+    : response;
 
   const trackingInfo = parseTrackInfo(parsedResponse, courier);
 
