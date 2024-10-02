@@ -1,3 +1,4 @@
+import { AxiosError } from "axios";
 import { Courier, TrackingInfo, TrackingOptions } from "./types";
 import {
   assertValidCode,
@@ -61,7 +62,21 @@ const trackForCourier = async <CourierName, CourierCode>(
   const { fetchTracking, parseResponseAsXml, urls } = courier.fetchOptions;
   const url = getEnvUrl({ urls, explicitEnv: options?.env });
 
-  const response = await fetchTracking(url, trackingNumber);
+  const response = await (async () => {
+    try {
+      const res = await fetchTracking(url, trackingNumber);
+      return res;
+    } catch (err) {
+      /**
+       * Unwrap Axios response error data
+       */
+      if ((err as AxiosError).response?.data) {
+        throw Error(JSON.stringify((err as AxiosError).response!.data));
+      }
+
+      throw err;
+    }
+  })();
 
   const trackingInfo = parseTrackInfo(response, courier);
 
