@@ -1,12 +1,11 @@
 {
   "name": "ts-shipment-tracking",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Unified shipment tracking data from FedEx, UPS, and USPS APIs.",
   "main": "dist/index",
   "types": "dist/index",
   "scripts": {
-    "prepublishOnly": "npm run compile",
-    "compile": "npm run clean && tsc -p .",
+    "prepublish": "npm run clean && tsc -p . --declaration",
     "watch": "tsc -w -p .",
     "clean": "rm -rf dist",
     "test": "npx jest",
