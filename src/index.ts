@@ -1,11 +1,6 @@
 import { AxiosError } from "axios";
 import { Courier, TrackingInfo, TrackingOptions } from "./types";
-import {
-  assertValidCode,
-  courierCodeMap,
-  getCourierCode,
-  getEnvUrl,
-} from "./utils";
+import { assertValidCode, courierCodeMap, getCourierCode, getEnvUrl } from "./utils";
 
 export * from "./types";
 
@@ -34,8 +29,7 @@ const parseTrackInfo = <CourierName, CourierCode>(
   }
 
   const events = parseOptions.getTrackingEvents(shipment);
-  const estimatedDeliveryTime =
-    parseOptions.getEstimatedDeliveryTime?.(shipment);
+  const estimatedDeliveryTime = parseOptions.getEstimatedDeliveryTime?.(shipment);
 
   return {
     events,
@@ -53,9 +47,7 @@ const trackForCourier = async <CourierName, CourierCode>(
    */
   courier.requiredEnvVars?.forEach((v) => {
     if (!process.env[v]) {
-      throw new Error(
-        `Environment variable "${v}" must be set in order to use ${courier.name} tracking.`
-      );
+      throw new Error(`Environment variable "${v}" must be set in order to use ${courier.name} tracking.`);
     }
   });
 
@@ -83,10 +75,7 @@ const trackForCourier = async <CourierName, CourierCode>(
   return trackingInfo;
 };
 
-export const track = async (
-  trackingNumber: string,
-  options?: TrackingOptions
-): Promise<TrackingInfo> => {
+export const track = async (trackingNumber: string, options?: TrackingOptions): Promise<TrackingInfo> => {
   const courierCode = options?.courierCode ?? getCourierCode(trackingNumber);
 
   assertValidCode(courierCode);

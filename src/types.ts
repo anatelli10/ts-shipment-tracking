@@ -57,10 +57,7 @@ export type FetchOptions = {
     prod: string;
   };
 
-  fetchTracking: (
-    url: string,
-    trackingNumber: string
-  ) => ReturnType<typeof fetch>;
+  fetchTracking: (url: string, trackingNumber: string) => ReturnType<typeof fetch>;
 };
 
 export type ParseOptions = {
@@ -77,9 +74,7 @@ export type ParseOptions = {
 
   getTrackingEvents: (shipment: any) => TrackingEvent[];
 
-  getEstimatedDeliveryTime?: (
-    shipment: any
-  ) => TrackingInfo["estimatedDeliveryTime"];
+  getEstimatedDeliveryTime?: (shipment: any) => TrackingInfo["estimatedDeliveryTime"];
 };
 
 export type Courier<Name, Code> = {

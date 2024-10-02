@@ -22,9 +22,7 @@ import axios from "axios";
  *
  * const value: "LABEL_CREATED" = output['PX'];
  */
-export const reverseOneToManyDictionary = <
-  OneToManyDictionary extends Readonly<Record<string, readonly string[]>>
->(
+export const reverseOneToManyDictionary = <OneToManyDictionary extends Readonly<Record<string, readonly string[]>>>(
   oneToManyDictionary: OneToManyDictionary
 ): {
   [StringArrayValue in OneToManyDictionary[keyof OneToManyDictionary][number]]: {
@@ -34,9 +32,7 @@ export const reverseOneToManyDictionary = <
   }[keyof OneToManyDictionary];
 } =>
   Object.fromEntries(
-    Object.entries(oneToManyDictionary).flatMap(([key, values]) =>
-      values.map((value: any) => [value, key])
-    )
+    Object.entries(oneToManyDictionary).flatMap(([key, values]) => values.map((value: any) => [value, key]))
   );
 
 export const getLocation = ({
@@ -53,9 +49,7 @@ export const getLocation = ({
 
 // source: https://github.com/joonhocho/tsdef/blob/4f0a9f07c5ac704604afeb64f52de3fc7709989c/src/index.ts#L222C1-L226C3
 export type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends Array<infer I>
-    ? Array<DeepPartial<I>>
-    : DeepPartial<T[P]>;
+  [P in keyof T]?: T[P] extends Array<infer I> ? Array<DeepPartial<I>> : DeepPartial<T[P]>;
 };
 
 export const clientCredentialsTokenRequest = async ({

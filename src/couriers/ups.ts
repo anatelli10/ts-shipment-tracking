@@ -1,9 +1,4 @@
-import {
-  clientCredentialsTokenRequest,
-  DeepPartial,
-  getLocation,
-  reverseOneToManyDictionary,
-} from "./utils";
+import { clientCredentialsTokenRequest, DeepPartial, getLocation, reverseOneToManyDictionary } from "./utils";
 import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from "../types";
 import { parse } from "date-fns";
 import { ups } from "ts-tracking-number";
@@ -49,51 +44,31 @@ const statusCodes = reverseOneToManyDictionary({
   ],
 } as const);
 
-const getTime = ({
-  date,
-  time,
-}: {
-  date: string | undefined;
-  time: string | undefined;
-}): number | undefined => {
+const getTime = ({ date, time }: { date: string | undefined; time: string | undefined }): number | undefined => {
   if (!date || !time) {
     return;
   }
 
-  const parsedDate = parse(
-    `${date}${time}`,
-    `${`yyyyMMdd`}${`Hmmss`}`,
-    new Date()
-  );
+  const parsedDate = parse(`${date}${time}`, `${`yyyyMMdd`}${`Hmmss`}`, new Date());
 
   return parsedDate.getTime();
 };
 
-const getStatus = (
-  status: ShipmentPackage["status"]
-): TrackingStatus | undefined => {
+const getStatus = (status: ShipmentPackage["status"]): TrackingStatus | undefined => {
   if (!status) {
     return;
   }
 
   const trackingStatus = (status.type && statusCodes[status.type]) || undefined;
 
-  if (
-    TrackingStatus.EXCEPTION === trackingStatus &&
-    status.description?.includes("DELIVERY ATTEMPTED")
-  ) {
+  if (TrackingStatus.EXCEPTION === trackingStatus && status.description?.includes("DELIVERY ATTEMPTED")) {
     return TrackingStatus.DELIVERY_ATTEMPTED;
   }
 
   return trackingStatus;
 };
 
-const getTrackingEvent = ({
-  date,
-  location,
-  status,
-  time,
-}: ShipmentPackage): TrackingEvent => ({
+const getTrackingEvent = ({ date, location, status, time }: ShipmentPackage): TrackingEvent => ({
   status: (status && getStatus(status)) || undefined,
   label: status?.description,
   location: getLocation({
@@ -117,13 +92,11 @@ const getEstimatedDeliveryTime = (shipment: any): number | undefined => {
 };
 
 const parseOptions: ParseOptions = {
-  getShipment: (response) =>
-    response.trackResponse?.shipment?.[0]?.package?.[0],
+  getShipment: (response) => response.trackResponse?.shipment?.[0]?.package?.[0],
 
   checkForError: (response) =>
     response.response?.errors?.[0] ||
-    "Tracking Information Not Found" ===
-      response.trackResponse?.shipment?.[0]?.warnings?.[0]?.message,
+    "Tracking Information Not Found" === response.trackResponse?.shipment?.[0]?.warnings?.[0]?.message,
 
   getTrackingEvents: (shipment) => shipment.activity.map(getTrackingEvent),
 
@@ -139,17 +112,14 @@ const fetchTracking = async (baseURL: string, trackingNumber: string) => {
     useAuthorizationHeader: true,
   });
 
-  const { data } = await axios(
-    `${baseURL}/api/track/v1/details/${trackingNumber}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
+  const { data } = await axios(`${baseURL}/api/track/v1/details/${trackingNumber}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
 
-        transId: randomUUID(),
-        transactionSrc: "ts-shipment-tracking",
-      },
-    }
-  );
+      transId: randomUUID(),
+      transactionSrc: "ts-shipment-tracking",
+    },
+  });
 
   return data;
 };

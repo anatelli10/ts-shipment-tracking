@@ -1,9 +1,4 @@
-import {
-  clientCredentialsTokenRequest,
-  DeepPartial,
-  getLocation,
-  reverseOneToManyDictionary,
-} from "./utils";
+import { clientCredentialsTokenRequest, DeepPartial, getLocation, reverseOneToManyDictionary } from "./utils";
 import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from "../types";
 import { fedex } from "ts-tracking-number";
 import axios from "axios";
@@ -46,12 +41,7 @@ const statusCodes = reverseOneToManyDictionary({
   ],
 } as const);
 
-const getTrackingEvent = ({
-  scanLocation,
-  eventDescription,
-  eventType,
-  date,
-}: TrackDetails): TrackingEvent => ({
+const getTrackingEvent = ({ scanLocation, eventDescription, eventType, date }: TrackDetails): TrackingEvent => ({
   status: (eventType && statusCodes[eventType]) || undefined,
   label: eventDescription,
   location: getLocation({
@@ -64,8 +54,7 @@ const getTrackingEvent = ({
 });
 
 const parseOptions: ParseOptions = {
-  getShipment: (response) =>
-    response.output.completeTrackResults[0].trackResults[0],
+  getShipment: (response) => response.output.completeTrackResults[0].trackResults[0],
 
   checkForError: (response) => response.errors,
 

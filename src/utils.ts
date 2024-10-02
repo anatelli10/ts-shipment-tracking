@@ -11,17 +11,13 @@ export const courierCodeMap = Object.values(couriers).reduce(
   }
 );
 
-const supportedCouriers = Object.values(couriers).flatMap(
-  ({ tsTrackingNumberCouriers }) => tsTrackingNumberCouriers
-);
+const supportedCouriers = Object.values(couriers).flatMap(({ tsTrackingNumberCouriers }) => tsTrackingNumberCouriers);
 
 export const getCourierCode = (trackingNumber: string) => {
   const tracking = getTracking(trackingNumber, supportedCouriers);
 
   if (!tracking) {
-    const supportedCourierNames = Object.values(couriers).map(
-      ({ name }) => name
-    );
+    const supportedCourierNames = Object.values(couriers).map(({ name }) => name);
     throw new Error(
       `"${trackingNumber}" is not a valid tracking number for supported couriers. Supported couriers are ${supportedCourierNames}.`
     );
@@ -30,15 +26,9 @@ export const getCourierCode = (trackingNumber: string) => {
   return tracking.courier.code;
 };
 
-export function assertValidCode(
-  value: string | undefined
-): asserts value is keyof typeof courierCodeMap {
+export function assertValidCode(value: string | undefined): asserts value is keyof typeof courierCodeMap {
   if (value == null || !(value in courierCodeMap)) {
-    throw new Error(
-      `"${value}" is not a valid courier code. Valid courier codes are ${Object.keys(
-        courierCodeMap
-      )}`
-    );
+    throw new Error(`"${value}" is not a valid courier code. Valid courier codes are ${Object.keys(courierCodeMap)}`);
   }
 }
 

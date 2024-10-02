@@ -25,9 +25,7 @@ const test = async () => {
     log(`${courierName}:`);
 
     if (!trackingNumber) {
-      log(
-        `Please set environment variable "${envVarName}" in order to test ${courierName} tracking.`
-      );
+      log(`Please set environment variable "${envVarName}" in order to test ${courierName} tracking.`);
       continue;
     }
 

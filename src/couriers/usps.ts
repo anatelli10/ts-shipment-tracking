@@ -1,9 +1,4 @@
-import {
-  clientCredentialsTokenRequest,
-  DeepPartial,
-  getLocation,
-  reverseOneToManyDictionary,
-} from "./utils";
+import { clientCredentialsTokenRequest, DeepPartial, getLocation, reverseOneToManyDictionary } from "./utils";
 import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from "../types";
 import { s10, usps } from "ts-tracking-number";
 import axios from "axios";
@@ -50,9 +45,7 @@ const getTrackingEvent = ({
   eventCountry,
   GMTTimestamp,
 }: TrackInfo): TrackingEvent => ({
-  status:
-    (eventCode ? statusCodes[eventCode] : TrackingStatus.IN_TRANSIT) ||
-    undefined,
+  status: (eventCode ? statusCodes[eventCode] : TrackingStatus.IN_TRANSIT) || undefined,
   label: name,
   location: getLocation({
     city: eventCity,
@@ -68,11 +61,9 @@ const parseOptions: ParseOptions = {
 
   checkForError: (response) => response.error,
 
-  getTrackingEvents: (shipment) =>
-    shipment.eventSummaries.map(getTrackingEvent),
+  getTrackingEvents: (shipment) => shipment.eventSummaries.map(getTrackingEvent),
 
-  getEstimatedDeliveryTime: (shipment) =>
-    Date.parse(shipment.expectedDeliveryTimeStamp),
+  getEstimatedDeliveryTime: (shipment) => Date.parse(shipment.expectedDeliveryTimeStamp),
 };
 
 const fetchTracking = async (baseURL: string, trackingNumber: string) => {
@@ -82,21 +73,14 @@ const fetchTracking = async (baseURL: string, trackingNumber: string) => {
   const token = await clientCredentialsTokenRequest({
     url: `${baseURL}/oauth2/v3/token`,
 
-    client_id: isDevEnv
-      ? process.env.USPS_DEV_CLIENT_ID!
-      : process.env.USPS_PROD_CLIENT_ID!,
-    client_secret: isDevEnv
-      ? process.env.USPS_DEV_CLIENT_SECRET!
-      : process.env.USPS_PROD_CLIENT_SECRET!,
+    client_id: isDevEnv ? process.env.USPS_DEV_CLIENT_ID! : process.env.USPS_PROD_CLIENT_ID!,
+    client_secret: isDevEnv ? process.env.USPS_DEV_CLIENT_SECRET! : process.env.USPS_PROD_CLIENT_SECRET!,
     scope: "tracking",
   });
 
-  const { data } = await axios(
-    `${baseURL}/tracking/v3/tracking/${trackingNumber}?expand=DETAIL`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
+  const { data } = await axios(`${baseURL}/tracking/v3/tracking/${trackingNumber}?expand=DETAIL`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
   return data;
 };
@@ -104,12 +88,7 @@ const fetchTracking = async (baseURL: string, trackingNumber: string) => {
 export const USPS: Courier<"USPS", "usps"> = {
   name: "USPS",
   code: "usps",
-  requiredEnvVars: [
-    "USPS_DEV_CLIENT_ID",
-    "USPS_DEV_CLIENT_SECRET",
-    "USPS_PROD_CLIENT_ID",
-    "USPS_PROD_CLIENT_SECRET",
-  ],
+  requiredEnvVars: ["USPS_DEV_CLIENT_ID", "USPS_DEV_CLIENT_SECRET", "USPS_PROD_CLIENT_ID", "USPS_PROD_CLIENT_SECRET"],
   fetchOptions: {
     urls: {
       dev: "https://api-cat.usps.com",
