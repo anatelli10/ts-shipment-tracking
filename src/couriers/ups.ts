@@ -1,117 +1,140 @@
-import * as codes from '../util/codes.json';
-import got from 'got';
-import { getTime, parse as dateParser } from 'date-fns';
-import { TrackingEvent, TrackingInfo } from '../util/types';
-import {
-  always,
-  apply,
-  applySpec,
-  both,
-  complement,
-  compose,
-  concat,
-  converge,
-  either,
-  equals,
-  filter,
-  ifElse,
-  includes,
-  isEmpty,
-  isNil,
-  join,
-  map,
-  nthArg,
-  path,
-  pathEq,
-  paths,
-  pipe,
-  prop,
-  propOr,
-  props,
-  __
-} from 'ramda';
+import { clientCredentialsTokenRequest, DeepPartial, getLocation, reverseOneToManyDictionary } from "./utils";
+import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from "../types";
+import { parse } from "date-fns";
+import { ups } from "ts-tracking-number";
+import axios from "axios";
+import { randomUUID } from "crypto";
 
-const getDate: (date: string, time: string) => number = pipe<any, Date, number>(
-  converge(dateParser, [
-    concat,
-    converge(concat, [
-      ifElse(nthArg(0), always('yyyyMMdd'), always('')),
-      ifElse(nthArg(1), always('Hmmss'), always(''))
-    ]),
-    always(Date.now())
-  ]),
-  getTime
-);
+type ShipmentPackage = DeepPartial<{
+  status: {
+    description: string;
+    type: keyof typeof statusCodes;
+  };
+  location: {
+    address: {
+      city: string;
+      stateProvince: string;
+      countryCode: string;
+      postalCode: string;
+    };
+  };
+  date: string;
+  time: string;
+}>;
 
-const getLocation: (activity: any) => string = pipe<any, any, string[], string[], string>(
-  path(['location', 'address']),
-  props(['city', 'stateProvince', 'countryCode', 'postalCode']),
-  filter(complement(either(isNil, isEmpty))),
-  ifElse(isEmpty, always(undefined), join(' '))
-);
+// prettier-ignore
+const statusCodes = reverseOneToManyDictionary({
+  [TrackingStatus.LABEL_CREATED]: [
+    'M', 'P',
+  ],
+  [TrackingStatus.IN_TRANSIT]: [
+    'I', 'DO', 'DD', 'W',
+  ],
+  [TrackingStatus.OUT_FOR_DELIVERY]: [
+    'O',
+  ],
+  [TrackingStatus.RETURNED_TO_SENDER]: [
+    'RS',
+  ],
+  [TrackingStatus.EXCEPTION]: [
+    'MV', 'X', 'NA',
+  ],
+  [TrackingStatus.DELIVERED]: [
+    'D',
+  ],
+} as const);
 
-const getStatus: (activity: any) => string = pipe<any, any, string>(
-  path(['status']),
-  ifElse(
-    both(equals('EXCEPTION'), compose(includes('DELIVERY ATTEMPT'), prop('description'))),
-    always('DELIVERY_ATTEMPTED'),
-    pipe<any, string, string>(prop('type'), propOr('UNAVAILABLE', __, codes.ups))
-  )
-);
+const getTime = ({ date, time }: { date: string | undefined; time: string | undefined }): number | undefined => {
+  if (!date || !time) {
+    return;
+  }
 
-const getTrackingEvent: (activity: any) => TrackingEvent = applySpec<TrackingEvent>({
-  status: getStatus,
-  label: path(['status', 'description']),
-  location: getLocation,
-  date: pipe(props(['date', 'time']), apply(getDate))
+  const parsedDate = parse(`${date}${time}`, `${`yyyyMMdd`}${`Hmmss`}`, new Date());
+
+  return parsedDate.getTime();
+};
+
+const getStatus = (status: ShipmentPackage["status"]): TrackingStatus | undefined => {
+  if (!status) {
+    return;
+  }
+
+  const trackingStatus = (status.type && statusCodes[status.type]) || undefined;
+
+  if (TrackingStatus.EXCEPTION === trackingStatus && status.description?.includes("DELIVERY ATTEMPTED")) {
+    return TrackingStatus.DELIVERY_ATTEMPTED;
+  }
+
+  return trackingStatus;
+};
+
+const getTrackingEvent = ({ date, location, status, time }: ShipmentPackage): TrackingEvent => ({
+  status: (status && getStatus(status)) || undefined,
+  label: status?.description,
+  location: getLocation({
+    city: location?.address?.city,
+    state: location?.address?.stateProvince,
+    country: location?.address?.countryCode,
+    zip: location?.address?.postalCode,
+  }),
+  time: getTime({ date, time }),
 });
 
-const getTrackingEvents: (packageDetails: any) => TrackingEvent[] = pipe<any, any, TrackingEvent[]>(
-  prop('activity'),
-  map(getTrackingEvent)
-);
+const getEstimatedDeliveryTime = (shipment: any): number | undefined => {
+  if ("EDW" !== shipment.deliveryTime?.type) {
+    return;
+  }
 
-const getEstimatedDeliveryDate: (packageDetails: any) => number = ifElse(
-  pathEq(['deliveryTime', 'type'], 'EDW'),
-  pipe(
-    paths([
-      ['deliveryDate', '0', 'date'],
-      ['deliveryTime', 'endTime']
-    ]),
-    apply(getDate)
-  ),
-  always(undefined)
-);
+  const date = shipment.deliveryDate?.[0]?.date;
+  const time = shipment.deliveryTime?.endTime;
 
-const parse: (response: any) => TrackingInfo | undefined = pipe<
-  any,
-  any,
-  any,
-  any,
-  TrackingInfo | undefined
->(
-  prop('body'),
-  JSON.parse,
-  path(['trackResponse', 'shipment', '0']),
-  ifElse(
-    either(isNil, pathEq(['warnings', '0', 'message'], 'Tracking Information Not Found')),
-    always(undefined),
-    pipe(
-      path(['package', '0']),
-      applySpec<TrackingInfo>({
-        events: getTrackingEvents,
-        estimatedDeliveryDate: getEstimatedDeliveryDate
-      })
-    )
-  )
-);
+  return getTime({ date, time });
+};
 
-export const trackUps = (trackingNumber: string): Promise<TrackingInfo | undefined> =>
-  got('https://onlinetools.ups.com/track/v1/details/' + trackingNumber, {
+const parseOptions: ParseOptions = {
+  getShipment: (response) => response.trackResponse?.shipment?.[0]?.package?.[0],
+
+  checkForError: (response) =>
+    response.response?.errors?.[0] ||
+    "Tracking Information Not Found" === response.trackResponse?.shipment?.[0]?.warnings?.[0]?.message,
+
+  getTrackingEvents: (shipment) => shipment.activity.map(getTrackingEvent),
+
+  getEstimatedDeliveryTime,
+};
+
+const fetchTracking = async (baseURL: string, trackingNumber: string) => {
+  const token = await clientCredentialsTokenRequest({
+    url: `${baseURL}/security/v1/oauth/token`,
+
+    client_id: process.env.UPS_CLIENT_ID!,
+    client_secret: process.env.UPS_CLIENT_SECRET!,
+    useAuthorizationHeader: true,
+  });
+
+  const { data } = await axios(`${baseURL}/api/track/v1/details/${trackingNumber}`, {
     headers: {
-      AccessLicenseNumber: process.env.UPS_ACCESS_LICENSE_NUMBER,
-      Accept: 'application/json'
-    }
-  })
-    .then(parse)
-    .catch((e) => undefined);
+      Authorization: `Bearer ${token}`,
+
+      transId: randomUUID(),
+      transactionSrc: "ts-shipment-tracking",
+    },
+  });
+
+  return data;
+};
+
+export const UPS: Courier<"UPS", "ups"> = {
+  name: "UPS",
+  code: "ups",
+  requiredEnvVars: ["UPS_CLIENT_ID", "UPS_CLIENT_SECRET"],
+  fetchOptions: {
+    urls: {
+      dev: "https://wwwcie.ups.com",
+      prod: "https://onlinetools.ups.com",
+    },
+    fetchTracking,
+  },
+  parseOptions,
+  tsTrackingNumberCouriers: [ups],
+};

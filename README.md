@@ -6,20 +6,17 @@
   </p>
 </p>
 
-<details open="open">
-  <summary>Table of Contents</summary>
-  <ol>
-    <li><a href="#about">About</a></li>
-    <li><a href="#installation">Installation</a></li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#built-with">Built With</a></li>
-    <li><a href="#acknowledgements">Acknowledgements</a></li>
-  </ol>
-</details>
-
 ## About
 
-Returns a unified response from FedEx, UPS, and USPS tracking APIs.
+Returns a unified response from FedEx, UPS, and USPS tracking APIs. Supports development and production environments.
+
+### API Versions
+
+_FedEx:_ Track API 1.0.0 (https://apis.fedex.com/track/v1)
+
+_UPS:_ Track API v1 (https://onlinetools.ups.com/api/track/v1)
+
+_USPS:_ Package Tracking and Notification 3.2.1 (https://api.usps.com/tracking/v3/tracking)
 
 ## Installation
 
@@ -35,81 +32,72 @@ Courier API credentials are stored using dotenv. If you do not have dotenv insta
 $ npm install dotenv
 ```
 
-Add the following credentials to your `.env` file:
-
-```
-FEDEX_KEY=
-FEDEX_PASSWORD=
-FEDEX_ACCOUNT_NUMBER=
-FEDEX_METER_NUMBER=
-UPS_ACCESS_LICENSE_NUMBER=
-USPS_USER_ID=
-```
+Copy the contents of [.env.template](.env.template) into your `.env` file and fill it out.
 
 Example input:
 
-```typescript
-import 'dotenv/config';
-import { TrackingInfo, track, trackByCourier, trackFedex } from 'ts-shipment-tracking';
+```ts
+import "dotenv/config";
+import { track, TrackingInfo } from "ts-shipment-tracking";
 
 (async () => {
-  const exampleOne: TrackingInfo | undefined = await track('<any_tracking_number>');
-  console.log(exampleOne);
+  // With automatic courier detection
+  try {
+    const tragnostic: TrackingInfo = await track("<any_tracking_number>");
 
-  // or
+    console.log(tragnostic);
+  } catch (err) {
+    console.log((err as Error).message);
+  }
 
-  const exampleTwo: TrackingInfo | undefined = await trackByCourier('ups', '<ups_tracking_number>');
-  console.log(exampleTwo);
+  // With explicitly specified courier
+  try {
+    const tracking: TrackingInfo = await track(
+      "<ups_tracking_number>",
+      // Supports autocomplete!
+      { courierCode: "ups" }
+    );
 
-  // or
-
-  const exampleThree: TrackingInfo | undefined = await trackFedex('<fedex_tracking_number>');
-  console.log(exampleThree);
+    console.log(tracking);
+  } catch (err) {
+    console.log((err as Error).message);
+  }
 })();
 ```
 
 Example output:
 
-```typescript
+```json
 {
   events: [
     {
       status: 'IN_TRANSIT',
       label: 'Arrived at FedEx location',
       location: 'LEBANON TN US 37090',
-      date: 1616823540000
+      time: 1616823540000
     },
     ...
   ],
-  estimatedDeliveryDate: 1616996340000
+  estimatedDeliveryTime: 1616996340000
 }
 ```
-⚠️ Currently the output will be `undefined` when the courier api does not have tracking info for the given tracking number or **when any error occurs** (including courier api not responding). Better error handling will be added in the future.
 
-Statuses:
+All statuses:
 
+```ts
+export enum TrackingStatus {
+  LABEL_CREATED = "LABEL_CREATED",
+  IN_TRANSIT = "IN_TRANSIT",
+  OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
+  DELIVERY_ATTEMPTED = "DELIVERY_ATTEMPTED",
+  RETURNED_TO_SENDER = "RETURNED_TO_SENDER",
+  EXCEPTION = "EXCEPTION",
+  DELIVERED = "DELIVERED",
+}
 ```
-'UNAVAILABLE'
-'LABEL_CREATED'
-'IN_TRANSIT'
-'OUT_FOR_DELIVERY'
-'DELIVERY_ATTEMPTED'
-'RETURNED_TO_SENDER'
-'EXCEPTION'
-'DELIVERED'
-```
-
-## Built With
-
-- [TypeScript](https://www.typescriptlang.org/)
-- [Ramda](https://ramdajs.com/)
-- [Node.js](https://nodejs.org/)
 
 ## Acknowledgements
 
-- [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number)
-- [Shipment Tracking](https://github.com/hautelook/shipment-tracking)
-- [date-fns](https://date-fns.org/)
-- [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser)
-- [got](https://github.com/sindresorhus/got)
+Thanks to @rjbrooksjr's [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number) module being used for tracking number validation and courier detection.
 
+Thanks to @hautelook's [Shipment Tracking](https://github.com/hautelook/shipment-tracking) repo used as a reference for some gaps in courier status codes as well as inspiration for architecture.

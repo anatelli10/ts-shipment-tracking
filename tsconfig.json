@@ -1,16 +1,8 @@
 {
+  // explicitly include path prefix "./node_modules/" to ensure ts-node works properly
+  "extends": "./node_modules/@tsconfig/Node18/tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2018",
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "esModuleInterop": true,
-    "strict": true
+    "outDir": "dist"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*"]
 }
