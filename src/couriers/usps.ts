@@ -75,6 +75,7 @@ const parseOptions: ParseOptions = {
 const fetchTracking = async (baseURL: string, trackingNumber: string) => {
   const token = await clientCredentialsTokenRequest({
     url: `${baseURL}/oauth2/v3/token`,
+    
     client_id: process.env.USPS_DEV_CLIENT_ID!,
     client_secret: process.env.USPS_DEV_CLIENT_SECRET!,
     scope: "tracking",

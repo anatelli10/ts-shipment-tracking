@@ -84,6 +84,7 @@ const parseOptions: ParseOptions = {
 const fetchTracking = async (baseURL: string, trackingNumber: string) => {
   const token = await clientCredentialsTokenRequest({
     url: `${baseURL}/oauth/token`,
+
     client_id: process.env.FEDEX_CLIENT_ID!,
     client_secret: process.env.FEDEX_CLIENT_SECRET!,
   });
