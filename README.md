@@ -98,6 +98,6 @@ export enum TrackingStatus {
 
 ## Acknowledgements
 
-Thanks to @rjbrooksjr's [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number) module being used for tracking number courier detection.
+Thanks to @rjbrooksjr's [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number) module being used for tracking number validation and courier detection.
 
 Thanks to @hautelook's [Shipment Tracking](https://github.com/hautelook/shipment-tracking) repo used as a reference for some gaps in courier status codes as well as inspiration for architecture.
