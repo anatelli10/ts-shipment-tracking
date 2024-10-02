@@ -59,7 +59,7 @@ const trackForCourier = async <CourierName, CourierCode>(
     }
   });
 
-  const { fetchTracking, parseResponseAsXml, urls } = courier.fetchOptions;
+  const { fetchTracking, urls } = courier.fetchOptions;
   const url = getEnvUrl({ urls, explicitEnv: options?.env });
 
   const response = await (async () => {

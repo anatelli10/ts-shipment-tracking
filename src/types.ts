@@ -55,7 +55,6 @@ export type FetchOptions = {
     url: string,
     trackingNumber: string
   ) => ReturnType<typeof fetch>;
-  parseResponseAsXml?: boolean;
 };
 
 export type ParseOptions = {
