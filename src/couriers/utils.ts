@@ -63,11 +63,13 @@ export const clientCredentialsTokenRequest = async ({
   client_id,
   client_secret,
   scope,
+  useAuthorizationHeader,
 }: {
   url: string;
   client_id: string;
   client_secret: string;
   scope?: string;
+  useAuthorizationHeader?: true;
 }) => {
   type OAuthTokenResponse = {
     access_token: string;
@@ -90,9 +92,22 @@ export const clientCredentialsTokenRequest = async ({
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
     },
+
+    // Pass the creds as an Authorization header
+    ...(useAuthorizationHeader && {
+      auth: {
+        username: client_id,
+        password: client_secret,
+      },
+    }),
+
     data: new URLSearchParams({
-      client_id,
-      client_secret,
+      // Pass the creds as part of the payload
+      ...(!useAuthorizationHeader && {
+        client_id,
+        client_secret,
+      }),
+
       grant_type: "client_credentials",
       ...(scope && { scope }),
     }),
