@@ -6,11 +6,7 @@
   </p>
 </p>
 
-## About
-
-Returns a unified response from FedEx, UPS, and USPS tracking APIs. Supports development and production environments.
-
-### API Versions
+## API Versions
 
 _FedEx:_ Track API 1.0.0 (https://apis.fedex.com/track/v1)
 
@@ -67,7 +63,7 @@ import { track, TrackingInfo } from "ts-shipment-tracking";
 
 Example output:
 
-```json
+```jsonc
 {
   events: [
     {
@@ -76,7 +72,7 @@ Example output:
       location: 'LEBANON TN US 37090',
       time: 1616823540000
     },
-    ...
+    // ...
   ],
   estimatedDeliveryTime: 1616996340000
 }
@@ -94,6 +90,12 @@ export enum TrackingStatus {
   EXCEPTION = "EXCEPTION",
   DELIVERED = "DELIVERED",
 }
+```
+
+API environment is determined by `process.env.NODE_ENV` ("development" or "production"). It can be overridden like so: 
+
+```ts
+await track("<tracking_number>", { env: myProductionFlag ? "production" : "development" });
 ```
 
 ## Acknowledgements
