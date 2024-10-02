@@ -6,19 +6,14 @@
   </p>
 </p>
 
-<details open="open">
-  <summary>Table of Contents</summary>
-  <ol>
-    <li><a href="#about">About</a></li>
-    <li><a href="#installation">Installation</a></li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#acknowledgements">Acknowledgements</a></li>
-  </ol>
-</details>
-
 ## About
 
 Returns a unified response from FedEx, UPS, and USPS tracking APIs.
+
+
+FedEx API version: --
+UPS API version: --
+USPS API version: Tracking 3.0 (https://api.usps.com/tracking/v3/tracking)
 
 ## Installation
 
@@ -34,16 +29,7 @@ Courier API credentials are stored using dotenv. If you do not have dotenv insta
 $ npm install dotenv
 ```
 
-Add the following credentials to your `.env` file:
-
-```
-FEDEX_KEY=
-FEDEX_PASSWORD=
-FEDEX_ACCOUNT_NUMBER=
-FEDEX_METER_NUMBER=
-UPS_ACCESS_LICENSE_NUMBER=
-USPS_USER_ID=
-```
+Copy the contents of [.env.template](.env.template) into your `.env` file and fill it out.
 
 Example input:
 
@@ -52,6 +38,7 @@ import 'dotenv/config';
 import { track, TrackingInfo } from 'ts-shipment-tracking';
 
 (async () => {
+  // With automatic courier detection
   try {
     const tragnostic: TrackingInfo = await track('<any_tracking_number>');
 
@@ -60,10 +47,9 @@ import { track, TrackingInfo } from 'ts-shipment-tracking';
     console.log((err as Error).message);
   }
 
-  // or
 
+  // With explicitly specified courier
   try {
-    // Bypass the automatic courier detection
     const tracking: TrackingInfo = await track(
       '<ups_tracking_number>',
       // Supports autocomplete!
@@ -79,7 +65,7 @@ import { track, TrackingInfo } from 'ts-shipment-tracking';
 
 Example output:
 
-```ts
+```json
 {
   events: [
     {
@@ -110,5 +96,6 @@ export enum TrackingStatus {
 
 ## Acknowledgements
 
-- [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number)
-- [Shipment Tracking](https://github.com/hautelook/shipment-tracking)
+Thanks to @rjbrooksjr's [TS Tracking Number](https://github.com/rjbrooksjr/ts-tracking-number) module being used for tracking number courier detection.
+
+Thanks to @hautelook's [Shipment Tracking](https://github.com/hautelook/shipment-tracking) repo used as a reference for some gaps in courier status codes as well as inspiration for architecture.

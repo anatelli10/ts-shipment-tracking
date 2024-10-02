@@ -1,6 +1,7 @@
 import { DeepPartial, getLocation, reverseOneToManyDictionary } from './utils';
 import { Courier, ParseOptions, TrackingEvent, TrackingStatus } from '../types';
 import { s10, usps } from 'ts-tracking-number';
+import axios from 'axios';
 
 // prettier-ignore
 const statusCodes = reverseOneToManyDictionary({
@@ -25,77 +26,98 @@ const statusCodes = reverseOneToManyDictionary({
 } as const);
 
 type TrackInfo = DeepPartial<{
-  Event: string;
-  EventCode: keyof typeof statusCodes;
-  EventCity: string;
-  EventState: string;
-  EventCountry: string;
-  EventZIPCode: string;
+  name: string;
+  eventCode: keyof typeof statusCodes;
+  eventCity: string;
+  eventState: string;
+  eventCountry: string;
+  eventZIP: string;
   EventDate: string;
-  EventTime: string;
+  GMTTimestamp: string;
 }>;
 
-const getTime = ({
-  date,
-  time,
-}: {
-  date: string | undefined;
-  time: string | undefined;
-}): number | undefined =>
-  date && time ? new Date(`${date} ${time}`).getTime() : undefined;
-
 const getTrackingEvent = ({
-  Event,
-  EventCity,
-  EventCode,
-  EventCountry,
-  EventDate,
-  EventState,
-  EventTime,
-  EventZIPCode,
+  name,
+  eventCode,
+  eventCity,
+  eventState,
+  eventZIP,
+  eventCountry,
+  GMTTimestamp,
 }: TrackInfo): TrackingEvent => ({
   status:
-    (EventCode ? statusCodes[EventCode] : TrackingStatus.IN_TRANSIT) ||
+    (eventCode ? statusCodes[eventCode] : TrackingStatus.IN_TRANSIT) ||
     undefined,
-  label: Event,
+  label: name,
   location: getLocation({
-    city: EventCity,
-    state: EventState,
-    country: EventCountry,
-    zip: EventZIPCode,
+    city: eventCity,
+    state: eventState,
+    country: eventCountry,
+    zip: eventZIP,
   }),
-  time: getTime({ date: EventDate, time: EventTime }),
+  time: Date.parse(GMTTimestamp!) || undefined,
 });
 
-const createRequestXml = (trackingNumber: string): string =>
-  `<TrackFieldRequest USERID="${process.env.USPS_USER_ID}">
-  <Revision>1</Revision>
-  <ClientIp>127.0.0.1</ClientIp>
-  <SourceId>1</SourceId>
-  <TrackID ID="${trackingNumber}"/>
-  </TrackFieldRequest>`;
-
 const parseOptions: ParseOptions = {
-  getShipment: (response) => response.TrackResponse?.TrackInfo,
-  checkForError: (response, trackInfo) => response.Error || trackInfo.Error,
+  getShipment: (response) => response,
+  checkForError: (response) => response.error,
   getTrackingEvents: (shipment) =>
-    shipment.TrackSummary.TrackDetail.flat().map(getTrackingEvent),
-  getEstimatedDeliveryTime: (shipment) => shipment.ExpectedDeliveryDate,
+    shipment.eventSummaries.map(getTrackingEvent),
+  getEstimatedDeliveryTime: (shipment) => shipment.expectedDeliveryTimeStamp,
 };
 
-const fetchTracking = (url: string, trackingNumber: string) =>
-  fetch(`${url}?API=TrackV2&XML=` + createRequestXml(trackingNumber));
+const fetchTracking = async (baseURL: string, trackingNumber: string) => {
+  type TokenResponse = {
+    access_token: string;
+    token_type: string;
+    issued_at: number;
+    expires_in: number;
+    status: string;
+    scope: string;
+    issuer: string;
+    client_id: string;
+    application_name: string;
+    api_products: string;
+    public_key: string;
+  };
+
+  const {
+    data: { access_token },
+  } = await axios<TokenResponse>(`${baseURL}/oauth2/v3/token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    data: new URLSearchParams({
+      client_id: process.env.USPS_DEV_CLIENT_ID!,
+      client_secret: process.env.USPS_DEV_CLIENT_SECRET!,
+      grant_type: 'client_credentials',
+      scope: 'tracking',
+    }),
+  });
+
+  return fetch(
+    `${baseURL}/tracking/v3/tracking/${trackingNumber}?expand=DETAIL`,
+    {
+      headers: { Authorization: `Bearer ${access_token}` },
+    }
+  );
+};
 
 export const USPS: Courier<'USPS', 'usps'> = {
   name: 'USPS',
   code: 'usps',
-  requiredEnvVars: ['USPS_USER_ID'],
+  requiredEnvVars: [
+    'USPS_DEV_CLIENT_ID',
+    'USPS_DEV_CLIENT_SECRET',
+    'USPS_PROD_CLIENT_ID',
+    'USPS_PROD_CLIENT_SECRET',
+  ],
   fetchOptions: {
     urls: {
-      dev: 'https://secure.shippingapis.com/ShippingAPI.dll',
-      prod: 'https://production.shippingapis.com/ShippingAPI.dll',
+      dev: 'https://api-cat.usps.com',
+      prod: 'https://api.usps.com',
     },
-    parseResponseAsXml: true,
     fetchTracking,
   },
   parseOptions,
