@@ -65,9 +65,12 @@ const getTrackingEvent = ({
 
 const parseOptions: ParseOptions = {
   getShipment: (response) => response,
+
   checkForError: (response) => response.error,
+
   getTrackingEvents: (shipment) =>
     shipment.eventSummaries.map(getTrackingEvent),
+
   getEstimatedDeliveryTime: (shipment) =>
     Date.parse(shipment.expectedDeliveryTimeStamp),
 };
@@ -75,7 +78,7 @@ const parseOptions: ParseOptions = {
 const fetchTracking = async (baseURL: string, trackingNumber: string) => {
   const token = await clientCredentialsTokenRequest({
     url: `${baseURL}/oauth2/v3/token`,
-    
+
     client_id: process.env.USPS_DEV_CLIENT_ID!,
     client_secret: process.env.USPS_DEV_CLIENT_SECRET!,
     scope: "tracking",

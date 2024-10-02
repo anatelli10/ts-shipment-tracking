@@ -66,8 +66,11 @@ const getTrackingEvent = ({
 const parseOptions: ParseOptions = {
   getShipment: (response) =>
     response.output.completeTrackResults[0].trackResults[0],
+
   checkForError: (response) => response.errors,
+
   getTrackingEvents: (shipment) => shipment.scanEvents.map(getTrackingEvent),
+
   getEstimatedDeliveryTime: (shipment) => {
     // The estimated window for time of delivery. May be periodically updated based on available in-flight shipment information.
     if (shipment.estimatedDeliveryTimeWindow.type === "ESTIMATED_DELIVERY") {

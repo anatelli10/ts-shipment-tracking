@@ -119,11 +119,14 @@ const getEstimatedDeliveryTime = (shipment: any): number | undefined => {
 const parseOptions: ParseOptions = {
   getShipment: (response) =>
     response.trackResponse?.shipment?.[0]?.package?.[0],
+
   checkForError: (response) =>
     response.response?.errors?.[0] ||
     "Tracking Information Not Found" ===
       response.trackResponse?.shipment?.[0]?.warnings?.[0]?.message,
+
   getTrackingEvents: (shipment) => shipment.activity.map(getTrackingEvent),
+
   getEstimatedDeliveryTime,
 };
 
