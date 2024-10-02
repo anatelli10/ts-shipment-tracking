@@ -26,7 +26,7 @@
     "usps",
     "s10"
   ],
-  "author": "Anthony Natelli",
+  "author": "Tony Natelli <tony@memna.tech>",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.7.7",
