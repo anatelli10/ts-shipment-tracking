@@ -25,7 +25,7 @@
     "usps",
     "s10"
   ],
-  "author": "Tony Natelli <tony@suspended.systems> (https://suspended.systems)",
+  "author": "Tony Natelli <tony@natel.li> (https://suspended.systems)",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.7.7",
