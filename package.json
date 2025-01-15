@@ -31,7 +31,7 @@
     "axios": "^1.7.7",
     "date-fns": "^2.22.1",
     "ts-tracking-number": "^1.0.13",
-    "tycelium": "^0.0.1"
+    "tycelium": "^0.1.0"
   },
   "devDependencies": {
     "@tsconfig/node18": "^18.2.2",
